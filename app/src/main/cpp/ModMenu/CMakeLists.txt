@@ -4,16 +4,16 @@ option(KITTYMEMORY_DEBUG "Enable KittyMemory debug log" ON)
 
 file(GLOB INCLUDE_FILES
     ../vendor/KittyMemory/*.h
-    ../vendor/imgui/*.h
-    ../vendor/imgui/backends/imgui_impl_opengl3.h
+    ${IMGUI_DIR}/*.h
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.h
     game/*.h
     helper/*.h
     ui/*.h
     utils/*.h)
 
 file(GLOB SOURCE_FILES
-    ../vendor/imgui/*.cpp
-    ../vendor/imgui/backends/imgui_impl_opengl3.cpp
+    ${IMGUI_DIR}/*.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
     ../vendor/KittyMemory/*.c
     ../vendor/KittyMemory/*.cpp
     *.cpp
@@ -31,7 +31,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     IMGUI_IMPL_OPENGL_ES2)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ../vendor/imgui
+    ${IMGUI_DIR}
     ../vendor/KittyMemory)
 
 target_link_libraries(${PROJECT_NAME}
