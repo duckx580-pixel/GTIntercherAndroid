@@ -4,10 +4,11 @@ plugins {
 
 def baseVersionName = "1.0.0-alpha02"
 def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-def shortRev = "git rev-parse --short HEAD".execute().text.toString().trim()
+def shortRev = ("git rev-parse --short HEAD".execute().text.toString().trim()).with { it.isEmpty() ? "unknown" : it }
 def isDevBuild = "git tag -l v${baseVersionName}".execute().text.isEmpty()
 
-def genVersionCode = "git rev-list --count HEAD".execute().text.toInteger()
+def _versionCodeRaw = "git rev-list --count HEAD".execute().text.toString().trim()
+def genVersionCode = (_versionCodeRaw.isInteger()) ? _versionCodeRaw.toInteger() : 1
 def genVersionName =
         // 1.0.0.deadbeef
         // 1.0.0.dev.deadbeef
