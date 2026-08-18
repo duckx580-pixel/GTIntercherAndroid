@@ -48,13 +48,13 @@ namespace game {
 namespace hook {
 void init()
 {
-    // set Dobby logging level.
     log_set_level(0);
 
-    // BaseApp::Draw(void)
+    // BaseApp::Draw(void) – mangled name stable across GT versions.
     install_hook_BaseApp__Draw("_ZN7BaseApp4DrawEv");
 
-    // AppOnTouch(_JNIEnv *,_jobject *,int,float,float,int)
+    // AppOnTouch JNI export – signature unchanged in v5.54.
+    // Prototype: AppOnTouch(JNIEnv*, jobject*, int type, float x, float y, bool multi)
     install_hook_AppOnTouch("_Z10AppOnTouchP7_JNIEnvP8_jobjectiffi");
 }
 } // hook

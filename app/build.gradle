@@ -15,13 +15,13 @@ def genVersionName =
         "${baseVersionName}${isDevBuild ? ".dev" : ""}.${shortRev}${ciRunNumber ? ".${ciRunNumber}" : ""}"
 
 android {
-    compileSdk 33
+    compileSdk 34
     namespace "com.gt.launcher"
 
     defaultConfig {
         applicationId 'com.gt.intercher'
         minSdk 21
-        targetSdk 33
+        targetSdk 34
         versionCode genVersionCode
         versionName "${genVersionName}"
 
