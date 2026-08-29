@@ -1,90 +1,72 @@
 package com.rtsoft.growtopia;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 
+/* JADX INFO: loaded from: classes2.dex */
 class AppGLSurfaceView extends GLSurfaceView {
     private static boolean mMultiTouchClassAvailable;
     public SharedActivity app;
-    boolean rendererSet;
-    AppRenderer mRenderer;
+    private AppRenderer mRenderer;
+    private boolean rendererSet;
 
-    public AppGLSurfaceView(Context context) {
-        super(context);
-    }
+    public static native void nativeOnTouch(int i, float f, float f2, int i2);
+
+    private static native void nativePause();
+
+    private static native void nativeResume();
 
     public AppGLSurfaceView(Context context, SharedActivity sharedActivity) {
         super(context);
-
+        setSystemUiVisibility(260);
         setEGLContextClientVersion(2);
-        app = sharedActivity;
-
+        this.app = sharedActivity;
         if (SharedActivity.m_editText != null) {
             Log.d(SharedActivity.PackageName, "Setting focus options...");
             setFocusable(true);
             setFocusableInTouchMode(true);
             requestFocus();
         }
-
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
-
-        mRenderer = new AppRenderer(sharedActivity);
-        setRenderer(mRenderer);
-        rendererSet = true;
-
+        AppRenderer appRenderer = new AppRenderer(sharedActivity);
+        this.mRenderer = appRenderer;
+        setRenderer(appRenderer);
+        this.rendererSet = true;
         setPreserveEGLContextOnPause(false);
-
-        /* Establish whether the "new" class is available to us */
-
         try {
-            WrapSharedMultiTouchInput.checkAvailable(app);
+            WrapSharedMultiTouchInput.checkAvailable(this.app);
             mMultiTouchClassAvailable = true;
-        } catch (Throwable th) {
+        } catch (Throwable unused) {
             mMultiTouchClassAvailable = false;
         }
     }
 
-    public static native void nativeOnTouch(int action, float x, float y, int finger);
-
-    private static native void nativePause();
-
-    private static native void nativeResume();
-
+    @Override // android.opengl.GLSurfaceView
     public void onPause() {
-        // super.onPause();
-        if (!SharedActivity.bIsShuttingDown) {
-            nativePause();
+        if (SharedActivity.bIsShuttingDown) {
+            return;
         }
+        nativePause();
     }
 
+    @Override // android.opengl.GLSurfaceView
     public void onResume() {
         super.onResume();
-        if (!SharedActivity.bIsShuttingDown) {
-            nativeResume();
+        if (SharedActivity.bIsShuttingDown) {
+            return;
         }
+        setSystemUiVisibility(260);
+        nativeResume();
     }
 
-    @Override
-    public boolean performClick() {
-        super.performClick();
-        return true;
-    }
-
+    @Override // android.view.View
     public synchronized boolean onTouchEvent(MotionEvent motionEvent) {
-        if (app.is_demo) {
-            new Dialog(app).dismiss();
-        }
-
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(motionEvent);
         }
-
-        int finger = 0; // Planning ahead for multi touch
-        nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), finger);
-        performClick();
+        nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), 0);
         return true;
     }
 }

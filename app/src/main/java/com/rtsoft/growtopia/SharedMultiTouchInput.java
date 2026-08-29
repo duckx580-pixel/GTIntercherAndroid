@@ -1,14 +1,20 @@
 package com.rtsoft.growtopia;
 
-import android.view.MotionEvent;
-
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-// Tricks for being compatible with Android 1.5 but still being able to use new features of 2.2
+/* JADX INFO: loaded from: classes2.dex */
 public class SharedMultiTouchInput {
     public static SharedActivity app;
     static LinkedList<TouchInfo> listTouches;
+
+    static class TouchInfo {
+        int fingerID;
+        public int pointerID;
+
+        TouchInfo() {
+        }
+    }
 
     public static void init(SharedActivity sharedActivity) {
         app = sharedActivity;
@@ -16,120 +22,112 @@ public class SharedMultiTouchInput {
     }
 
     public static int GetNextAvailableFingerID() {
-        int fingerID = 0;
-        while (fingerID < 12) {
-            boolean bOk = true;
-            for (TouchInfo touchInfo : listTouches) {
-                if (fingerID == touchInfo.fingerID) {
-                    bOk = false;
+        int i = 0;
+        while (i < 12) {
+            Boolean bool = true;
+            ListIterator<TouchInfo> listIterator = listTouches.listIterator();
+            while (true) {
+                if (!listIterator.hasNext()) {
+                    break;
+                }
+                if (i == listIterator.next().fingerID) {
+                    bool = false;
                     break;
                 }
             }
-
-            if (bOk) {
-                return fingerID;
+            if (bool.booleanValue()) {
+                break;
             }
-
-            // Guess we failed, try again
-            fingerID++;
+            i++;
         }
-
-        return fingerID;
+        return i;
     }
 
-    public static int GetFingerByPointerID(int pointerID) {
-        for (TouchInfo touchInfo : listTouches) {
-            if (pointerID == touchInfo.pointerID) {
-                return touchInfo.fingerID;
+    public static int GetFingerByPointerID(int i) {
+        ListIterator<TouchInfo> listIterator = listTouches.listIterator();
+        while (listIterator.hasNext()) {
+            TouchInfo next = listIterator.next();
+            if (i == next.pointerID) {
+                return next.fingerID;
             }
         }
-
         TouchInfo touchInfo = new TouchInfo();
-        touchInfo.pointerID = pointerID;
+        touchInfo.pointerID = i;
         touchInfo.fingerID = GetNextAvailableFingerID();
-
         listTouches.add(touchInfo);
         return touchInfo.fingerID;
     }
 
-    public static void RemoveFinger(int pointerID) {
-        ListIterator<TouchInfo> iterator = listTouches.listIterator();
-        while (iterator.hasNext()) {
-            TouchInfo touchInfo = iterator.next();
-            if (pointerID == touchInfo.pointerID) {
-                iterator.remove();
+    public static void RemoveFinger(int i) {
+        ListIterator<TouchInfo> listIterator = listTouches.listIterator();
+        while (listIterator.hasNext()) {
+            if (i == listIterator.next().pointerID) {
+                listIterator.remove();
                 return;
             }
         }
     }
 
-    public static void processMouse(int msg, float x, float y, int id) {
-        // We can't just send the id, it cannot be used as a "fingerID" as it could be 100 or more in certain circumstances on an
-        // xperia.  We'll do our own finger track abstraction here before we send it to Proton
-        int fingerID = GetFingerByPointerID(id);
-        if (msg == MotionEvent.ACTION_UP) {
-            RemoveFinger(id);
+    public static void processMouse(int i, float f, float f2, int i2) {
+        int iGetFingerByPointerID = GetFingerByPointerID(i2);
+        if (i == 1) {
+            RemoveFinger(i2);
         }
-
-        AppGLSurfaceView.nativeOnTouch(msg, x, y, fingerID);
+        AppGLSurfaceView.nativeOnTouch(i, f, f2, iGetFingerByPointerID);
     }
 
-    // Based on code from http://stackoverflow.com/questions/5860879/android-motionevent-getactionindex-and-multitouch
-    public static boolean OnInput(MotionEvent motionEvent) {
-        int actionIndex = motionEvent.getActionIndex();
-        int actionMasked = motionEvent.getActionMasked();
-        switch (actionMasked) {
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_UP:
-                SharedMultiTouchInput.processMouse(
-                    actionMasked,
-                    motionEvent.getX(actionIndex),
-                    motionEvent.getY(actionIndex),
-                    motionEvent.getPointerId(actionIndex)
-                );
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                SharedMultiTouchInput.processMouse(
-                    MotionEvent.ACTION_DOWN,
-                    motionEvent.getX(actionIndex),
-                    motionEvent.getY(actionIndex),
-                    motionEvent.getPointerId(actionIndex)
-                );
-                break;
-            case MotionEvent.ACTION_POINTER_UP:
-                SharedMultiTouchInput.processMouse(
-                    MotionEvent.ACTION_UP,
-                    motionEvent.getX(actionIndex),
-                    motionEvent.getY(actionIndex),
-                    motionEvent.getPointerId(actionIndex)
-                );
-                break;
-            case MotionEvent.ACTION_MOVE: {
-                int pointerCount = 0;
-                while (pointerCount < motionEvent.getPointerCount()) {
-                    SharedMultiTouchInput.processMouse(
-                        actionMasked,
-                        motionEvent.getX(pointerCount),
-                        motionEvent.getY(pointerCount),
-                        motionEvent.getPointerId(pointerCount)
-                    );
-                    pointerCount++;
-                }
-                break;
-            }
-            case MotionEvent.ACTION_CANCEL:
-                // This almost never happens... but really, I guess we should look at our active touch list and send button ups fr
-                // each one before destroying the list
-                listTouches.clear();
-                break;
-            default:
-                return false;
-        }
-        return true;
-    }
-
-    static class TouchInfo {
-        public int pointerID;
-        int fingerID;
+    /* JADX WARN: Removed duplicated region for block: B:19:0x003c  */
+    /* JADX WARN: Removed duplicated region for block: B:20:0x004c  */
+    /*
+        Code decompiled incorrectly, please refer to instructions dump.
+        To view partially-correct code enable 'Show inconsistent code' option in preferences
+    */
+    public static boolean OnInput(android.view.MotionEvent r6) {
+        /*
+            int r0 = r6.getActionIndex()
+            int r1 = r6.getActionMasked()
+            r2 = 0
+            r3 = 1
+            if (r1 == 0) goto L4c
+            if (r1 == r3) goto L3c
+            r4 = 2
+            if (r1 == r4) goto L21
+            r4 = 3
+            if (r1 == r4) goto L1b
+            r4 = 5
+            if (r1 == r4) goto L4c
+            r2 = 6
+            if (r1 == r2) goto L3c
+            goto L5b
+        L1b:
+            java.util.LinkedList<com.rtsoft.growtopia.SharedMultiTouchInput$TouchInfo> r6 = com.rtsoft.growtopia.SharedMultiTouchInput.listTouches
+            r6.clear()
+            goto L5b
+        L21:
+            r6.getPointerCount()
+        L24:
+            int r0 = r6.getPointerCount()
+            if (r2 >= r0) goto L5b
+            float r0 = r6.getX(r2)
+            float r1 = r6.getY(r2)
+            int r5 = r6.getPointerId(r2)
+            processMouse(r4, r0, r1, r5)
+            int r2 = r2 + 1
+            goto L24
+        L3c:
+            float r1 = r6.getX(r0)
+            float r2 = r6.getY(r0)
+            int r6 = r6.getPointerId(r0)
+            processMouse(r3, r1, r2, r6)
+            goto L5b
+        L4c:
+            float r1 = r6.getX(r0)
+            float r4 = r6.getY(r0)
+            int r6 = r6.getPointerId(r0)
+            processMouse(r2, r1, r4, r6)
+        L5b:
+            return r3
+        */
+        throw new UnsupportedOperationException("Method not decompiled: com.rtsoft.growtopia.SharedMultiTouchInput.OnInput(android.view.MotionEvent):boolean");
     }
 }
