@@ -4,10 +4,23 @@ plugins {
 
 def baseVersionName = "1.0.0-alpha02"
 def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-def shortRev = "git rev-parse --short HEAD".execute().text.toString().trim()
-def isDevBuild = "git tag -l v${baseVersionName}".execute().text.isEmpty()
 
-def genVersionCode = "git rev-list --count HEAD".execute().text.toInteger()
+// Safe git helpers — fall back gracefully when git is not in Gradle's PATH (e.g. Windows/AS)
+def execGit = { String cmd ->
+    try {
+        def proc = cmd.execute()
+        proc.waitForOrKill(3000)
+        return proc.text.toString().trim()
+    } catch (ignored) {
+        return ""
+    }
+}
+
+def shortRev   = execGit("git rev-parse --short HEAD").with { it.isEmpty() ? "local" : it }
+def isDevBuild = execGit("git tag -l v${baseVersionName}").isEmpty()
+
+def countText      = execGit("git rev-list --count HEAD")
+def genVersionCode = countText.isInteger() ? countText.toInteger() : 1
 def genVersionName =
         // 1.0.0.deadbeef
         // 1.0.0.dev.deadbeef
@@ -80,7 +93,7 @@ dependencies {
     implementation 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
     implementation 'com.appsflyer:af-android-sdk:6.12.2'
     implementation 'com.android.installreferrer:installreferrer:2.2'
-    implementation 'com.miui.referrer:homereferrer:1.0.0.6'
+    // com.miui.referrer:homereferrer is not on Maven Central; use official jitpack if needed
     implementation 'com.android.billingclient:billing:6.0.1'
     implementation 'com.google.android.gms:play-services-base:18.3.0'
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
