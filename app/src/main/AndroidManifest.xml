@@ -25,17 +25,26 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name">
 
+        <!-- ── Launcher UI ── -->
         <activity
-            android:name=".Main"
-            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:name=".LauncherActivity"
             android:exported="true"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.GTL">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.GTL.Launcher"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- ── Growtopia game activity (started by LauncherActivity) ── -->
+        <activity
+            android:name=".Main"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.GTL" />
 
         <activity
             android:name="com.rtsoft.growtopia.PermissionActivity"
@@ -50,12 +59,18 @@
             android:theme="@android:style/Theme.NoTitleBar"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name="com.rtsoft.growtopia.HelpshiftActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.NoTitleBar" />
+
         <service
             android:name=".FloatingService"
             android:enabled="true"
             android:exported="false"
             android:stopWithTask="true"
-            android:configChanges="keyboard|keyboardHidden|orientation"/>
+            android:configChanges="keyboard|keyboardHidden|orientation" />
 
         <meta-data
             android:name="com.google.android.gms.version"

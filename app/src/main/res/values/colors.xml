@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="seed">#A83900</color>
+    <color name="launcher_bg">#0D0D12</color>
+    <color name="launcher_card">#16182A</color>
+    <color name="launcher_card_purple">#1A1535</color>
+    <color name="launcher_purple">#7C3AED</color>
+    <color name="launcher_purple_mid">#8B5CF6</color>
+    <color name="launcher_purple_light">#A78BFA</color>
+    <color name="launcher_purple_dark">#5B21B6</color>
+    <color name="launcher_blue">#3B82F6</color>
+    <color name="launcher_text_primary">#FFFFFF</color>
+    <color name="launcher_text_secondary">#6B7280</color>
+    <color name="launcher_text_dim">#374151</color>
+    <color name="launcher_green">#10B981</color>
+    <color name="launcher_border">#1F2937</color>
+    <color name="launcher_white_10">#1AFFFFFF</color>
+    <color name="launcher_white_5">#0DFFFFFF</color>
 </resources>
