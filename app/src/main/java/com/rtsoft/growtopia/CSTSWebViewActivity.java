@@ -6,102 +6,99 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.FrameLayout;
-
+import com.rtsoft.growtopia.CSTSWebViewClient;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
-public class CSTSWebViewActivity extends Activity implements
-    CSTSWebViewClient.CSTSWebViewClientCallback {
+/* JADX INFO: loaded from: classes2.dex */
+public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.CSTSWebViewClientCallback {
     private String _initialURL;
     private CSTSWebView _webView;
 
+    @Override // android.app.Activity
     protected void onCreate(Bundle bundle) {
+        String str;
         super.onCreate(bundle);
-
         requestWindowFeature(1);
-
-        _webView = new CSTSWebView(this);
-        _webView.getWebClient().setCSTSWebViewActivityCallback(this);
-
         FrameLayout frameLayout = new FrameLayout(this);
-        frameLayout.addView(_webView);
-
+        CSTSWebView cSTSWebView = new CSTSWebView(this);
+        this._webView = cSTSWebView;
+        cSTSWebView.getWebClient().setCSTSWebViewActivityCallback(this);
+        frameLayout.addView(this._webView);
         setContentView(frameLayout);
-
         if (bundle == null) {
             Intent intent = getIntent();
-            String cstsuid = intent.getStringExtra("cstsuid");
-            String language = intent.getStringExtra("language");
-            String country = intent.getStringExtra("country");
-            boolean payer = intent.getBooleanExtra("payer", false);
-            String ingameplayerid = intent.getStringExtra("ingameplayerid");
-            String environment = intent.getStringExtra("environment");
-            String misc = intent.getStringExtra("misc");
-            String str = (environment.equals("PROD") ? "https://csts-mob.ubi.com/index.php" : "https://dev-csts-mob.ubi.com/index.php") + "?cstsuid=" + cstsuid + "&platform=android&language=" + language + "&country=" + country + "&iap=" + payer + "&igpid=" + ingameplayerid + "&device=" + urlencode(
-                getDeviceInfos());
-            if (misc != null) {
-                if (!misc.equals("")) {
-                    str += "&misc=" + urlencode(misc);
-                }
+            String stringExtra = intent.getStringExtra("cstsuid");
+            String stringExtra2 = intent.getStringExtra("country");
+            String stringExtra3 = intent.getStringExtra("language");
+            Boolean boolValueOf = Boolean.valueOf(intent.getBooleanExtra("payer", false));
+            String stringExtra4 = intent.getStringExtra("ingameplayerid");
+            String stringExtra5 = intent.getStringExtra("environment");
+            String stringExtra6 = intent.getStringExtra("misc");
+            if (stringExtra5.equals("PROD")) {
+                str = "https://csts-mob.ubi.com/index.php";
+            } else {
+                str = "https://dev-csts-mob.ubi.com/index.php";
             }
-
-            str += "&dnaid=" + ingameplayerid;
-            Log.v("cstslog", "connecting to CSTS  : " + str);
-            _initialURL = str;
-            _webView.loadUrl(str);
+            String str2 = str + "?cstsuid=" + stringExtra + "&platform=android&language=" + stringExtra3 + "&country=" + stringExtra2 + "&iap=" + boolValueOf + "&igpid=" + stringExtra4 + "&device=" + urlencode(getDeviceInfos());
+            if (stringExtra6 != null && !stringExtra6.equals("")) {
+                str2 = str2 + "&misc=" + urlencode(stringExtra6);
+            }
+            String str3 = str2 + "&dnaid=" + stringExtra4;
+            Log.v("cstslog", "connecting to CSTS  : " + str3);
+            this._initialURL = str3;
+            this._webView.loadUrl(str3);
         }
     }
 
+    @Override // android.app.Activity
     protected void onPostCreate(Bundle bundle) {
         super.onPostCreate(bundle);
     }
 
-    protected void onPause() {
-        super.onPause();
-        onCSExit();
-    }
-
-    public void onBackPressed() {
-        if (_webView.canGoBack()) {
-            _webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    protected void onRestoreInstanceState(Bundle bundle) {
-        super.onRestoreInstanceState(bundle);
-        _webView.restoreState(bundle);
-    }
-
-    protected void onSaveInstanceState(Bundle bundle) {
-        super.onSaveInstanceState(bundle);
-        _webView.saveState(bundle);
-    }
-
-    @Override
+    @Override // com.rtsoft.growtopia.CSTSWebViewClient.CSTSWebViewClientCallback
     public void onCSExit() {
         finish();
     }
 
     public String getDeviceInfos() {
-        String deviceInfos = "android version:" + System.getProperty("os.version") + "(" + Build.VERSION.INCREMENTAL + ")";
-        deviceInfos += ";android API Level:" + Build.VERSION.SDK_INT;
-        deviceInfos += ";device:" + Build.DEVICE;
-        deviceInfos += ";model:" + Build.MODEL;
-        return deviceInfos;
+        return ((("android version:" + System.getProperty("os.version") + "(" + Build.VERSION.INCREMENTAL + ")") + ";android API Level:" + Build.VERSION.SDK_INT) + ";device:" + Build.DEVICE) + ";model:" + Build.MODEL;
     }
 
     public String urlencode(String str) {
-        String str2 = str;
         try {
-            str2 = URLEncoder.encode(str2, StandardCharsets.UTF_8);
+            // nb.N was IronSource SDK's own "utf-8" constant; inlined to drop
+            // the dependency on IronSource's obfuscated com.json package.
+            return URLEncoder.encode(str, "utf-8");
         } catch (Exception e) {
-            Log.e("cstslog",
-                "CSTS_urlencode" + e.getMessage() + Arrays.toString(e.getStackTrace())
-            );
+            Log.e("cstslog", "CSTS_urlencode" + e.getMessage() + e.getStackTrace());
+            return str;
         }
-        return str2;
+    }
+
+    @Override // android.app.Activity
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        this._webView.saveState(bundle);
+    }
+
+    @Override // android.app.Activity
+    protected void onRestoreInstanceState(Bundle bundle) {
+        super.onRestoreInstanceState(bundle);
+        this._webView.restoreState(bundle);
+    }
+
+    @Override // android.app.Activity
+    public void onBackPressed() {
+        if (this._webView.canGoBack()) {
+            this._webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override // android.app.Activity
+    protected void onPause() {
+        super.onPause();
+        onCSExit();
     }
 }

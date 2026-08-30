@@ -1,36 +1,43 @@
 package com.rtsoft.growtopia;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.util.AttributeSet;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 
+/* JADX INFO: compiled from: CSTSWebViewActivity.java */
+/* JADX INFO: loaded from: classes2.dex */
 class CSTSWebView extends WebView {
-    private CSTSWebViewClient _webClient = null;
+    private CSTSWebViewClient _webClient;
+
+    public CSTSWebViewClient getWebClient() {
+        return this._webClient;
+    }
 
     public CSTSWebView(Context context) {
         super(context);
+        this._webClient = null;
         setupWebView();
     }
 
     public CSTSWebView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
+        this._webClient = null;
         setupWebView();
     }
 
     public CSTSWebView(Context context, AttributeSet attributeSet, int i) {
         super(context, attributeSet, i);
+        this._webClient = null;
         setupWebView();
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
-        if (_webClient == null) {
-            _webClient = new CSTSWebViewClient();
-            setWebViewClient(_webClient);
-
+        if (this._webClient == null) {
+            CSTSWebViewClient cSTSWebViewClient = new CSTSWebViewClient();
+            this._webClient = cSTSWebViewClient;
+            setWebViewClient(cSTSWebViewClient);
             getSettings().setJavaScriptEnabled(true);
             getSettings().setDomStorageEnabled(true);
             clearCache(true);
@@ -38,10 +45,7 @@ class CSTSWebView extends WebView {
         }
     }
 
-    public CSTSWebViewClient getWebClient() {
-        return _webClient;
-    }
-
+    @Override // android.webkit.WebView, android.view.View
     public void onConfigurationChanged(Configuration configuration) {
         super.onConfigurationChanged(configuration);
     }
@@ -50,7 +54,6 @@ class CSTSWebView extends WebView {
         if (getUrl().contains("facebook")) {
             return true;
         }
-
-        return _webClient.isInCreateAccount();
+        return this._webClient.isInCreateAccount();
     }
 }

@@ -2,7 +2,14 @@
 <resources>
     <style name="Theme.GTL" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowFullscreen">true</item>
-
         <item name="colorPrimary">@color/seed</item>
+    </style>
+
+    <style name="Theme.GTL.Launcher" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/launcher_bg</item>
+        <item name="android:statusBarColor">@color/launcher_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/launcher_purple</item>
     </style>
 </resources>

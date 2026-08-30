@@ -4,48 +4,54 @@ import android.app.Activity;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.util.Log;
-import android.view.DisplayCutout;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.PopupWindow;
 
+/* JADX INFO: loaded from: classes2.dex */
 public class HeightProvider extends PopupWindow implements ViewTreeObserver.OnGlobalLayoutListener {
-    private final Activity mActivity;
-    private final View rootView;
     int lastKeyboardHeight;
     private HeightListener listener;
+    private Activity mActivity;
     private View parentView;
+    private View rootView;
+
+    public interface HeightListener {
+        void onHeightChanged(int i);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public ViewTreeObserver.OnGlobalLayoutListener getGlobalLayoutListener() {
+        return this;
+    }
 
     public HeightProvider(Activity activity) {
         super(activity);
-        lastKeyboardHeight = -1;
-        mActivity = activity;
-        rootView = new FrameLayout(activity);
-        setContentView(rootView);
+        this.lastKeyboardHeight = -1;
+        this.mActivity = activity;
+        FrameLayout frameLayout = new FrameLayout(activity);
+        this.rootView = frameLayout;
+        setContentView(frameLayout);
         setBackgroundDrawable(new ColorDrawable(0));
         setWidth(0);
         setHeight(-1);
+        setFocusable(false);
+        setTouchable(false);
+        setOutsideTouchable(false);
         setSoftInputMode(21);
         setInputMethodMode(1);
     }
 
-    private ViewTreeObserver.OnGlobalLayoutListener getGlobalLayoutListener() {
-        return this;
-    }
-
     public void OnResume() {
-        View findViewById = this.mActivity.findViewById(16908290);
-        this.parentView = findViewById;
-        findViewById.post(new Runnable() { // from class: com.rtsoft.growtopia.HeightProvider.1
+        View viewFindViewById = this.mActivity.findViewById(android.R.id.content);
+        this.parentView = viewFindViewById;
+        viewFindViewById.post(new Runnable() { // from class: com.rtsoft.growtopia.HeightProvider.1
             @Override // java.lang.Runnable
             public void run() {
-                HeightProvider.this.rootView.getViewTreeObserver()
-                    .addOnGlobalLayoutListener(HeightProvider.this.getGlobalLayoutListener());
-                if (HeightProvider.this.isShowing() || HeightProvider.this.parentView.getWindowToken() == null) {
+                HeightProvider.this.rootView.getViewTreeObserver().addOnGlobalLayoutListener(HeightProvider.this.getGlobalLayoutListener());
+                if (HeightProvider.this.isShowing() || HeightProvider.this.parentView.getWindowToken() == null || HeightProvider.this.mActivity.isFinishing()) {
                     return;
                 }
                 HeightProvider heightProvider = HeightProvider.this;
@@ -55,16 +61,16 @@ public class HeightProvider extends PopupWindow implements ViewTreeObserver.OnGl
     }
 
     public void OnPause() {
-        this.rootView.getViewTreeObserver().addOnGlobalLayoutListener(getGlobalLayoutListener());
+        this.rootView.getViewTreeObserver().removeOnGlobalLayoutListener(getGlobalLayoutListener());
         dismiss();
     }
 
-    public HeightProvider setHeightListener(HeightListener listener) {
-        this.listener = listener;
+    public HeightProvider setHeightListener(HeightListener heightListener) {
+        this.listener = heightListener;
         return this;
     }
 
-    @Override
+    @Override // android.view.ViewTreeObserver.OnGlobalLayoutListener
     public void onGlobalLayout() {
         HeightListener heightListener;
         Point point = new Point();
@@ -74,35 +80,11 @@ public class HeightProvider extends PopupWindow implements ViewTreeObserver.OnGl
         if (this.mActivity.getResources().getConfiguration().orientation == 1) {
             return;
         }
-        int topCutoutHeight = (point.y + getTopCutoutHeight()) - rect.bottom;
-        Log.d("HeightProvider", "Keyboard height: " + topCutoutHeight);
-        if (topCutoutHeight != this.lastKeyboardHeight && (heightListener = this.listener) != null) {
-            heightListener.onHeightChanged(topCutoutHeight);
+        int i = point.y - rect.bottom;
+        Log.d("HeightProvider", "Keyboard height: " + i);
+        if (i != this.lastKeyboardHeight && (heightListener = this.listener) != null) {
+            heightListener.onHeightChanged(i);
         }
-        this.lastKeyboardHeight = topCutoutHeight;
-    }
-
-    private int getTopCutoutHeight() {
-        DisplayCutout displayCutout;
-        View decorView = this.mActivity.getWindow().getDecorView();
-        int i = 0;
-        if (decorView == null) {
-            return 0;
-        }
-        if (Build.VERSION.SDK_INT >= 23) {
-            WindowInsets rootWindowInsets = decorView.getRootWindowInsets();
-            if (Build.VERSION.SDK_INT >= 28 && (displayCutout = rootWindowInsets.getDisplayCutout()) != null) {
-                for (Rect rect : displayCutout.getBoundingRects()) {
-                    if (rect.top == 0) {
-                        i += rect.bottom - rect.top;
-                    }
-                }
-            }
-        }
-        return i;
-    }
-
-    public interface HeightListener {
-        void onHeightChanged(int height);
+        this.lastKeyboardHeight = i;
     }
 }

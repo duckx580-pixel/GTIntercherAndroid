@@ -1,13 +1,24 @@
-plugins {
-    id 'com.android.application'
-}
+apply plugin: 'com.android.application'
 
 def baseVersionName = "1.0.0-alpha02"
 def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-def shortRev = "git rev-parse --short HEAD".execute().text.toString().trim()
-def isDevBuild = "git tag -l v${baseVersionName}".execute().text.isEmpty()
 
-def genVersionCode = "git rev-list --count HEAD".execute().text.toInteger()
+// Safe git helpers — fall back gracefully when git is not in Gradle's PATH (e.g. Windows/AS)
+def execGit = { String cmd ->
+    try {
+        def proc = cmd.execute()
+        proc.waitForOrKill(3000)
+        return proc.text.toString().trim()
+    } catch (ignored) {
+        return ""
+    }
+}
+
+def shortRev   = execGit("git rev-parse --short HEAD").with { it.isEmpty() ? "local" : it }
+def isDevBuild = execGit("git tag -l v${baseVersionName}").isEmpty()
+
+def countText      = execGit("git rev-list --count HEAD")
+def genVersionCode = countText.isInteger() ? countText.toInteger() : 1
 def genVersionName =
         // 1.0.0.deadbeef
         // 1.0.0.dev.deadbeef
@@ -15,26 +26,74 @@ def genVersionName =
         "${baseVersionName}${isDevBuild ? ".dev" : ""}.${shortRev}${ciRunNumber ? ".${ciRunNumber}" : ""}"
 
 android {
-    compileSdk 33
+    compileSdk 34
     namespace "com.gt.launcher"
+
+    // AGP 7.0+ disabled AIDL compilation by default. The project genuinely
+    // ships .aidl files (com/android/vending/licensing/*.aidl) that
+    // LicenseChecker.java needs the generated ILicenseResultListener and
+    // ILicensingService interfaces from, so it has to be turned back on.
+    buildFeatures {
+        aidl true
+    }
+
+    // Since API 28, org.apache.http.* was removed from the default compile
+    // classpath entirely. ServerManagedPolicy.java and APKExpansionPolicy.java
+    // (Google's old license-check helpers) import org.apache.http.NameValuePair
+    // and org.apache.http.client.utils.URLEncodedUtils directly, which only
+    // exist in this optional platform library -- it ships with every Android
+    // SDK install, so this doesn't add a network dependency.
+    useLibrary 'org.apache.http.legacy'
+
+    // Growtopia's own native engine reads several of its bundled asset
+    // formats (items.dat, .rttex textures) via a raw file descriptor
+    // straight into the APK's zip (AAsset_openFileDescriptor), which only
+    // works for uncompressed (STORED) zip entries -- Android's AssetManager
+    // cannot hand out an mmap-able FD/offset into a DEFLATEd one. aapt2
+    // compresses any extension it doesn't already recognize as
+    // pre-compressed by default, which covers none of these, so they need
+    // to be listed explicitly or the engine's own asset reads fail even
+    // though the files are present in the APK.
+    aaptOptions {
+        noCompress 'dat', 'rttex', 'rtfont', 'rml', 'rcss', 'ttf', 'fnt', 'db'
+    }
 
     defaultConfig {
         applicationId 'com.gt.intercher'
         minSdk 21
-        targetSdk 33
+        targetSdk 34
         versionCode genVersionCode
         versionName "${genVersionName}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
+            // Growtopia 5.55 ships arm64-v8a only -- there is no armeabi-v7a
+            // libgrowtopia.so to hook. Our libraries are loaded into the game's
+            // own process, so they have to match its ABI; building 32-bit here
+            // would only produce libraries that can never be loaded, and would
+            // let the app install on devices that cannot run the game at all.
             //noinspection ChromeOsAbiSupport
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
+            abiFilters 'arm64-v8a'
         }
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared'
+                // Static, not shared: GrowtopiaFix.so embeds its own copy of
+                // the C++ runtime instead of producing a separate
+                // libc++_shared.so. With a shared STL, CMake's own
+                // libc++_shared.so and Growtopia's own copy (bundled directly
+                // in src/main/jniLibs/arm64-v8a/, the same way RealGrowlauncher
+                // -- a real, working Growtopia launcher -- ships it) would
+                // both produce "lib/arm64-v8a/libc++_shared.so", which the
+                // native-lib merge step rejects outright ("2 files found with
+                // path..."). Static sidesteps that instead of relying on a
+                // pickFirst rule's merge-order to reliably choose Growtopia's
+                // copy over CMake's own. GrowtopiaFix.so doesn't share C++
+                // objects across the shared-library boundary with Growtopia's
+                // own libraries (Dobby hooking is plain C function
+                // interception), so having its own embedded runtime is safe.
+                arguments '-DANDROID_STL=c++_static'
             }
         }
     }
@@ -73,14 +132,17 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.work:work-runtime:2.8.1'
 
-    // Needed by Growtopia
+    // Needed by Growtopia 5.55
     implementation 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
-    implementation 'com.appsflyer:af-android-sdk:6.9.4'
+    implementation 'com.appsflyer:af-android-sdk:6.12.2'
     implementation 'com.android.installreferrer:installreferrer:2.2'
-    implementation 'com.miui.referrer:homereferrer:1.0.0.6'
-    implementation 'com.android.billingclient:billing:5.1.0'
-    implementation 'com.google.android.gms:play-services-base:18.1.0'
+    // com.miui.referrer:homereferrer is not on Maven Central; use official jitpack if needed
+    implementation 'com.android.billingclient:billing:6.0.1'
+    implementation 'com.google.android.gms:play-services-base:18.3.0'
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    implementation 'com.google.android.play:review:2.0.1'
     implementation 'com.tapjoy:tapjoy-android-sdk:12.10.0'
 }

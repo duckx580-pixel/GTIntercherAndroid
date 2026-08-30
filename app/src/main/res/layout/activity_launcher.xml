@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/launcher_bg"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="32dp">
+
+        <!-- ===================== HEADER ===================== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
+
+            <!-- Lightning animation canvas -->
+            <com.gt.launcher.LightningView
+                android:id="@+id/lightning_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Header content -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingTop="24dp"
+                android:paddingBottom="16dp"
+                android:paddingStart="4dp">
+
+                <TextView
+                    android:id="@+id/tv_version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="v5.55"
+                    android:textColor="@color/launcher_purple_light"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="GTIntercher"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="34sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="-0.01" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Your game, intercepted."
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Switch Version button top-right -->
+            <TextView
+                android:id="@+id/btn_switch_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_purple_pill"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:text="⚡ Switch Version"
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- ===================== QUICK ACTIONS HEADER ===================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Quick Actions"
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_guest_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_outline_purple"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="7dp"
+                android:paddingBottom="7dp"
+                android:text="Guest mode"
+                android:textColor="@color/launcher_purple_light"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ===================== GRID ROW 1 ===================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginBottom="10dp">
+
+            <!-- LAUNCH -->
+            <LinearLayout
+                android:id="@+id/card_launch"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/bg_card_launch"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_play_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LAUNCH"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Start your session"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- SCRIPT HUB -->
+            <LinearLayout
+                android:id="@+id/card_script_hub"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_search_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SCRIPT HUB"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Browse Lua files"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- SETTINGS -->
+            <LinearLayout
+                android:id="@+id/card_settings"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_settings_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SETTING"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Account &amp; prefs"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===================== GRID ROW 2 ===================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginBottom="18dp">
+
+            <!-- LUA MANAGER -->
+            <LinearLayout
+                android:id="@+id/card_lua"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_add_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LUA MANAGER"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Import scripts"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- SOUND -->
+            <LinearLayout
+                android:id="@+id/card_sound"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_music_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SOUND"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Audio tools"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- THEME -->
+            <LinearLayout
+                android:id="@+id/card_theme"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:gravity="bottom"
+                android:padding="14dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:src="@drawable/ic_star_launcher"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="THEME"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Make it yours"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===================== RUNTIME CARD ===================== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_purple"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mod Runtime"
+                        android:textColor="@color/launcher_purple_light"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="GTIntercher library · patches active"
+                        android:textColor="@color/launcher_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_lib_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_purple_pill"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="7dp"
+                    android:paddingBottom="7dp"
+                    android:text="Installed"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:id="@+id/dot_status"
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
+                    android:background="@drawable/bg_green_dot"
+                    android:layout_marginEnd="7dp" />
+
+                <TextView
+                    android:id="@+id/tv_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Online · Ready"
+                    android:textColor="@color/launcher_green"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Core 5.55 · arm64"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ===================== FOOTER ===================== -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="GTIntercher · built for smooth sessions"
+            android:textColor="@color/launcher_text_dim"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+</ScrollView>

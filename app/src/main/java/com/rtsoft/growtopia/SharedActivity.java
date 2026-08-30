@@ -715,6 +715,8 @@ public class SharedActivity extends Activity implements SensorEventListener,
 
     public static native void nativeOnKey(int type, int keycode, int c);
 
+    public static native void nativeOnInputText(String str);
+
     public static native void nativeOnTrackball(float x, float y);
 
     public static native void nativeOnAccelerometerUpdate(float x, float y, float z);

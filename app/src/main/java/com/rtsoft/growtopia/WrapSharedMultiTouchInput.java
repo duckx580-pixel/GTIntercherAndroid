@@ -2,7 +2,14 @@ package com.rtsoft.growtopia;
 
 import android.view.MotionEvent;
 
+/* JADX INFO: compiled from: AppGLSurfaceView.java */
+/* JADX INFO: loaded from: classes2.dex */
 class WrapSharedMultiTouchInput {
+    private SharedMultiTouchInput mInstance;
+
+    WrapSharedMultiTouchInput() {
+    }
+
     static {
         try {
             Class.forName("com.rtsoft.growtopia.SharedMultiTouchInput");
@@ -11,14 +18,11 @@ class WrapSharedMultiTouchInput {
         }
     }
 
-    private SharedMultiTouchInput mInstance;
+    public static void checkAvailable(SharedActivity sharedActivity) {
+        SharedMultiTouchInput.init(sharedActivity);
+    }
 
     public static boolean OnInput(MotionEvent motionEvent) {
         return SharedMultiTouchInput.OnInput(motionEvent);
-    }
-
-    /* calling here forces class initialization */
-    public static void checkAvailable(SharedActivity sharedActivity) {
-        SharedMultiTouchInput.init(sharedActivity);
     }
 }
