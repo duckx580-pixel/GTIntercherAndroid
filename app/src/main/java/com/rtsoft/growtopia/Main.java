@@ -116,15 +116,27 @@ public class Main extends SharedActivity {
     }
 
     public static boolean HandleDeeplink(Intent intent) {
+        if (intent == null || mainApp == null) {
+            return false;
+        }
+
         final Uri data = intent.getData();
         if (data == null) {
             return false;
         }
-        Log.d("URL host", data.getHost());
+
+        // Log.d throws on a null message, and getHost/getPath are null for a
+        // non-hierarchical URI such as "growtopia:something".
+        Log.d("URL host", String.valueOf(data.getHost()));
         Log.d("URL data", data.toString());
-        Log.d("URL Path", data.getPath());
-        Log.d("URL Scheme", data.getScheme());
-        Log.d("URL Fragment", data.getSchemeSpecificPart());
+        Log.d("URL Path", String.valueOf(data.getPath()));
+        Log.d("URL Scheme", String.valueOf(data.getScheme()));
+        Log.d("URL Fragment", String.valueOf(data.getSchemeSpecificPart()));
+
+        if (mainApp.mGLView == null) {
+            return false;
+        }
+
         mainApp.mGLView.post(new Runnable() {
             @Override
             public void run() {

@@ -16,10 +16,22 @@ void constructor_main()
     // Create a new thread because we don't want do while loop make main thread
     // stuck.
     auto thread = std::thread([]() {
-        // Wait until Growtopia native library loaded.
-        do {
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 32 });
-        } while (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr);
+        // Wait until Growtopia native library loaded. Bounded, so a failed or
+        // aborted launch leaves a thread that exits rather than one spinning
+        // for the life of the process.
+        constexpr int kPollIntervalMs = 32;
+        constexpr int kTimeoutMs = 60000;
+
+        int waited = 0;
+        while (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr) {
+            if (waited >= kTimeoutMs) {
+                LOGE("libgrowtopia.so did not load within %d ms; giving up", kTimeoutMs);
+                return;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds{ kPollIntervalMs });
+            waited += kPollIntervalMs;
+        }
 
         KittyMemory::ProcMap map{};
         map = KittyMemory::getLibraryBaseMap("libgrowtopia.so");

@@ -275,7 +275,13 @@ public class WebViewManager {
     }
 
     private void clearWebViewDirectories() {
-        File dataDir = this.baseActivity.getDataDir();
+        // getDataDir() is API 24+, and minSdk here is 21. Calling it on an
+        // older device raises NoSuchMethodError -- an Error, not an Exception,
+        // so the constructor's catch would not have caught it and the executor
+        // thread would have taken the process down on startup.
+        File dataDir = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N
+            ? this.baseActivity.getDataDir()
+            : this.baseActivity.getFilesDir().getParentFile();
         File cacheDir = this.baseActivity.getCacheDir();
         if (dataDir != null) {
             File[] files = dataDir.listFiles();
