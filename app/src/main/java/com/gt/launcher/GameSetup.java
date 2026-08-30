@@ -57,13 +57,24 @@ public final class GameSetup {
         }
     }
 
-    /** "arm64-v8a" or "armeabi-v7a", matching what this device actually runs. */
-    public static String abi() {
-        String supported = java.util.Arrays.toString(Build.SUPPORTED_ABIS);
-        if (supported.contains("arm64")) {
-            return "arm64-v8a";
+    /**
+     * The only ABI Growtopia 5.55 ships. It dropped armeabi-v7a, so there is
+     * no 32-bit libgrowtopia.so to load or hook.
+     */
+    public static final String ABI = "arm64-v8a";
+
+    /**
+     * True when this device can actually run the game. A 32-bit-only device
+     * has nothing to load, and reports a clearer reason than a failed
+     * extraction would.
+     */
+    public static boolean isDeviceSupported() {
+        for (String abi : Build.SUPPORTED_64_BIT_ABIS) {
+            if (ABI.equals(abi)) {
+                return true;
+            }
         }
-        return "armeabi-v7a";
+        return false;
     }
 
     private static File extractedRoot(Context context) {
@@ -71,7 +82,7 @@ public final class GameSetup {
     }
 
     private static File extractedLibDir(Context context) {
-        return new File(extractedRoot(context), "lib/" + abi());
+        return new File(extractedRoot(context), "lib/" + ABI);
     }
 
     /**
@@ -142,7 +153,7 @@ public final class GameSetup {
             return false;
         }
 
-        String prefix = "lib/" + abi() + "/";
+        String prefix = "lib/" + ABI + "/";
         int extracted = 0;
 
         for (String apk : apks) {

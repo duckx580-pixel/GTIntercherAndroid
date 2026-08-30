@@ -54,6 +54,12 @@ public class LauncherActivity extends AppCompatActivity {
         View btnGuest = findViewById(R.id.btn_guest_mode);
         btnGuest.setOnClickListener(v -> {
             if (launching) return;
+            if (!GameSetup.isDeviceSupported()) {
+                Toast.makeText(this,
+                    "This device is 32-bit only. Growtopia 5.55 requires a 64-bit (arm64) device.",
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
             if (!GameSetup.isGrowtopiaInstalled(this)) {
                 Toast.makeText(this,
                     "Growtopia is not installed. Install it first, then press Launch.",
@@ -125,6 +131,13 @@ public class LauncherActivity extends AppCompatActivity {
 
     private void onLaunchClicked() {
         if (launching) return;
+
+        if (!GameSetup.isDeviceSupported()) {
+            Toast.makeText(this,
+                "This device is 32-bit only. Growtopia 5.55 requires a 64-bit (arm64) device.",
+                Toast.LENGTH_LONG).show();
+            return;
+        }
 
         if (!GameSetup.isGrowtopiaInstalled(this)) {
             Toast.makeText(this,
