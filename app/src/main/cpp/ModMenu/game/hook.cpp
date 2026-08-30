@@ -151,10 +151,14 @@ void init(JNIEnv* env)
         LOGE("Could not resolve a touch function; mod menu will not accept input");
     }
 
-    // The caller (Java_com_gt_launcher_ModMenuBridge_installHooks) hands us
-    // the JNIEnv straight from a real JNI call on the main thread, so it is
-    // already valid here -- no AttachCurrentThread/DetachCurrentThread dance
-    // needed, and none of the classloader pitfalls that come with it.
+    // The caller (main.cpp's background thread spawned from
+    // Java_com_gt_launcher_ModMenuBridge_installHooks) already attached
+    // itself to the JVM before calling this, so the JNIEnv it hands us here
+    // is valid -- this function itself doesn't need to attach or detach
+    // anything. find_app_class() (helper/hook.h) is still required rather
+    // than a plain FindClass, though: this JNIEnv belongs to an
+    // AttachCurrentThread'd thread, not one that originated from Java, so a
+    // plain FindClass would resolve against the wrong classloader.
     bool render_hooked = install_hook_AppRenderer__nativeRender(
         env, "com/rtsoft/growtopia/AppRenderer", "nativeRender", "()V", render_addr);
 

@@ -1,3 +1,4 @@
+#include <thread>
 #include <dlfcn.h>
 #include <jni.h>
 #include <android/log.h>
@@ -11,18 +12,25 @@
 // System.loadLibrary("growtopia") returns and before super.onCreate() starts
 // Growtopia's own GL render thread. See the matching comment above
 // Java_com_gt_launcher_ModMenuBridge_installHooks in ModMenu/main.cpp for the
-// full reasoning.
+// full reasoning, including why the actual work below runs on a spawned
+// background thread rather than inline here: this is called straight from
+// Activity.onCreate() on the main/UI thread, and doing this synchronously
+// there was found to stall onCreate() long enough to freeze the whole app on
+// this (slow) emulator -- no crash, just a black screen until the process
+// had to be force-stopped.
 //
 // This used to run on its own unbounded background std::thread that polled
-// dlopen(RTLD_NOLOAD) forever and then called game::hook::init() the moment
-// libgrowtopia.so appeared -- a second thread, entirely uncoordinated with
-// ModMenu's own (former) polling thread and with Growtopia's own startup,
-// touching the process via DobbySymbolResolver at an arbitrary point in time.
-// That is the same shape of race suspected of causing an intermittent
-// SIGSEGV inside libhoudini.so (Houdini, the ARM-to-x86 translator MEmu uses)
-// on real test runs. Calling this synchronously and only once, at the one
-// point where growtopia.so is guaranteed loaded but nothing of Growtopia's
-// has started running yet, removes that race for this library too.
+// dlopen(RTLD_NOLOAD) forever from process launch and then called
+// game::hook::init() the moment libgrowtopia.so appeared -- a second thread,
+// entirely uncoordinated with ModMenu's own (former) polling thread and with
+// Growtopia's own startup, touching the process via DobbySymbolResolver at
+// an arbitrary point in time. That is the same shape of race suspected of
+// causing an intermittent SIGSEGV inside libhoudini.so (Houdini, the
+// ARM-to-x86 translator MEmu uses) on other test runs. Spawning the
+// background thread here instead, the instant growtopia.so finishes
+// loading, keeps the work off the main thread while shrinking that race
+// window down to the fixed, comparatively small amount of Java-side setup
+// SharedActivity.onCreate() does before it creates the GLSurfaceView.
 extern "C" JNIEXPORT void JNICALL Java_com_gt_launcher_ModMenuBridge_installFixHooks(JNIEnv* /*env*/, jclass /*clazz*/)
 {
     if (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr) {
@@ -30,5 +38,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_gt_launcher_ModMenuBridge_installFixH
         return;
     }
 
-    game::hook::init();
+    std::thread([]() {
+        game::hook::init();
+    }).detach();
 }
