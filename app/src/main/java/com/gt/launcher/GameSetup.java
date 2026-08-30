@@ -38,6 +38,27 @@ public final class GameSetup {
     private static final String NATIVE_LIB = "libgrowtopia.so";
     private static final String EXTRACTED_DIR = "extracted_apk";
 
+    /**
+     * libgrowtopia.so's own DT_NEEDED entries that are NOT part of Android's
+     * system linker namespace (confirmed with readelf -d against the real
+     * 5.55 binary) -- everything else it needs (libGLESv2, libEGL, libc,
+     * libandroid, libdl, liblog, libz, libm) is always resolvable regardless
+     * of native library directory, so only these three have to actually be
+     * found alongside it.
+     *
+     * Checking for libgrowtopia.so alone is not enough: on a split-APK
+     * install, ApplicationInfo.nativeLibraryDir can report a directory that
+     * has libgrowtopia.so merged into it but not one of these, if it shipped
+     * in a different split. dlopen then fails on the *dependency*'s name,
+     * not the library actually requested -- exactly what surfaced as
+     * "UnsatisfiedLinkError: dlopen failed: library libanzu.so not found"
+     * at Main.java's System.loadLibrary("growtopia") call, even though
+     * libgrowtopia.so itself was present.
+     */
+    private static final String[] REQUIRED_LIBS = {
+        NATIVE_LIB, "libanzu.so", "libsqliteX.so", "libc++_shared.so"
+    };
+
     /** Reports extraction progress so the launcher can show something moving. */
     public interface ProgressListener {
         void onProgress(String message);
@@ -96,17 +117,25 @@ public final class GameSetup {
         }
 
         // Preferred: the installer already unpacked the libraries for us.
-        if (info.nativeLibraryDir != null
-            && new File(info.nativeLibraryDir, NATIVE_LIB).exists()) {
+        if (info.nativeLibraryDir != null && hasAllRequiredLibs(new File(info.nativeLibraryDir))) {
             return info.nativeLibraryDir;
         }
 
         File extracted = extractedLibDir(context);
-        if (new File(extracted, NATIVE_LIB).exists()) {
+        if (hasAllRequiredLibs(extracted)) {
             return extracted.getAbsolutePath();
         }
 
         return null;
+    }
+
+    private static boolean hasAllRequiredLibs(File dir) {
+        for (String lib : REQUIRED_LIBS) {
+            if (!new File(dir, lib).exists()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** True when {@link #extract} needs to run before the game can start. */
@@ -162,15 +191,26 @@ public final class GameSetup {
             }
             extracted += extractLibsFrom(apk, prefix, libDir, listener);
 
-            // Stop as soon as the library we actually need has landed.
-            if (new File(libDir, NATIVE_LIB).exists()) {
+            // Stop once every library libgrowtopia.so needs has landed. Each
+            // one can live in a different split APK, so this has to keep
+            // scanning rather than stopping the moment libgrowtopia.so
+            // itself is found -- that was exactly the bug that let a
+            // directory missing libanzu.so pass as "ready".
+            if (hasAllRequiredLibs(libDir)) {
                 break;
             }
         }
 
-        boolean ok = new File(libDir, NATIVE_LIB).exists();
-        Log.i(TAG, "Extraction finished: " + extracted + " libraries, "
-            + NATIVE_LIB + (ok ? " present" : " MISSING"));
+        boolean ok = hasAllRequiredLibs(libDir);
+        if (!ok) {
+            for (String lib : REQUIRED_LIBS) {
+                if (!new File(libDir, lib).exists()) {
+                    Log.e(TAG, "Extraction finished but " + lib + " is still missing");
+                }
+            }
+        }
+        Log.i(TAG, "Extraction finished: " + extracted + " libraries, required set "
+            + (ok ? "complete" : "INCOMPLETE"));
         return ok;
     }
 
