@@ -9,6 +9,7 @@
 #include "../helper/hook.h"
 #include "../ui/ui.h"
 #include "../mod_menu.h"
+#include "game_api.h"
 
 extern ModMenu* g_mod_menu;
 
@@ -86,8 +87,15 @@ INSTALL_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
         LOGI("ImGui initialized at %.0fx%.0f", display_size.x, display_size.y);
     }
 
+    // The menu calls back into the game's JNI entry points while it draws, so
+    // publish this frame's env for the duration of the draw. It is only valid
+    // on this thread, and only inside this call.
+    game::api::set_frame_env(env, clazz);
+
     g_mod_menu->m_ui->set_display_size(display_size);
     g_mod_menu->m_ui->render();
+
+    game::api::clear_frame_env();
 }
 
 // AppGLSurfaceView.nativeOnTouch(int action, float x, float y, int finger).
@@ -100,12 +108,12 @@ INSTALL_HOOK(AppGLSurfaceView__nativeOnTouch, void,
 {
     if (g_mod_menu->m_ui != nullptr) {
         g_mod_menu->m_ui->on_touch(action, finger, x, y);
-    }
 
-    // Swallow the touch when ImGui owns it so it does not also reach the game.
-    if (g_mod_menu->m_ui != nullptr && ImGui::GetCurrentContext() != nullptr
-        && ImGui::GetIO().WantCaptureMouse) {
-        return;
+        // Swallow the touch when the menu owns it so it does not also reach
+        // the game underneath.
+        if (g_mod_menu->m_ui->wants_input()) {
+            return;
+        }
     }
 
     orig_AppGLSurfaceView__nativeOnTouch(env, clazz, action, x, y, finger);
@@ -147,7 +155,14 @@ void init()
 
     if (touch_addr != nullptr) {
         install_hook_AppGLSurfaceView__nativeOnTouch(touch_addr);
+
+        // Hand the menu Dobby's trampoline to the unhooked original so injected
+        // taps reach the game directly instead of re-entering our own hook.
+        game::api::set_touch_passthrough(orig_AppGLSurfaceView__nativeOnTouch);
     }
+
+    // Resolve the JNI entry points the menu calls into for its features.
+    game::api::init();
 }
 } // hook
 } // game
