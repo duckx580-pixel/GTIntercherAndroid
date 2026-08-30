@@ -2,7 +2,6 @@ package com.gt.launcher;
 
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,16 +36,22 @@ public class Main extends com.rtsoft.growtopia.Main {
         // here would block the main thread on a multi-hundred-megabyte unzip,
         // which is what used to freeze the app on launch.
         //
-        // Note this must not bail out by returning early: onCreate has to reach
-        // super.onCreate or the framework raises SuperNotCalledException. The
-        // launcher is the gate that keeps us from getting here unprepared; the
-        // fallback below is best-effort for the case where it somehow does.
+        // This must not bail out by returning early: onCreate has to reach
+        // super.onCreate or the framework raises SuperNotCalledException, and
+        // super.onCreate (com.rtsoft.growtopia.Main) unconditionally calls
+        // System.loadLibrary("growtopia") with no guard of its own. That means
+        // there is no recovering here once we've been started: if the native
+        // libraries are not genuinely ready, super.onCreate crashes regardless
+        // of what this method does. A previous version of this method "fell
+        // back" to ApplicationInfo.nativeLibraryDir directly when resolution
+        // failed, on the theory that something was better than nothing --
+        // that was wrong. resolveNativeLibraryDir already checks that exact
+        // directory first; falling back to it again after it was rejected
+        // guarantees the same missing-library crash through a different path.
+        // LauncherActivity is the only real gate: it must not start this
+        // activity unless resolveNativeLibraryDir() is already non-null.
         String nativeLibraryDir = GameSetup.resolveNativeLibraryDir(this);
-        if (nativeLibraryDir == null) {
-            ApplicationInfo info = GameSetup.applicationInfo(this);
-            nativeLibraryDir = info != null ? info.nativeLibraryDir : null;
-            Log.w(TAG, "Native library dir unresolved; falling back to " + nativeLibraryDir);
-        }
+        Log.i(TAG, "resolveNativeLibraryDir() = " + nativeLibraryDir);
 
         if (nativeLibraryDir != null) {
             try {

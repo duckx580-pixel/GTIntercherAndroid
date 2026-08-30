@@ -116,13 +116,20 @@ public final class GameSetup {
             return null;
         }
 
-        // Preferred: the installer already unpacked the libraries for us.
-        if (info.nativeLibraryDir != null && hasAllRequiredLibs(new File(info.nativeLibraryDir))) {
-            return info.nativeLibraryDir;
-        }
-
+        // Deliberately NOT using ApplicationInfo.nativeLibraryDir here, even
+        // when it looks complete. On a real device this passed
+        // hasAllRequiredLibs() for every required library, including
+        // libanzu.so -- File.exists() was true -- and dlopen still failed
+        // to find libanzu.so. That directory belongs to another app's
+        // private storage; whatever the exact reason (a corrupt or
+        // zero-byte file from however the installer merged split APKs, or
+        // SELinux declining to let this process load another app's native
+        // library even though it can stat() it), loading from it is not
+        // reliable. Our own extracted copy lives in storage this app fully
+        // owns, sidestepping that whole class of problem, so it is the only
+        // path trusted for loading now.
         File extracted = extractedLibDir(context);
-        if (hasAllRequiredLibs(extracted)) {
+        if (hasAllRequiredLibs(extracted, true)) {
             return extracted.getAbsolutePath();
         }
 
@@ -130,12 +137,26 @@ public final class GameSetup {
     }
 
     private static boolean hasAllRequiredLibs(File dir) {
+        return hasAllRequiredLibs(dir, false);
+    }
+
+    private static boolean hasAllRequiredLibs(File dir, boolean verbose) {
+        boolean ok = true;
         for (String lib : REQUIRED_LIBS) {
-            if (!new File(dir, lib).exists()) {
-                return false;
+            File f = new File(dir, lib);
+            long length = f.exists() ? f.length() : -1;
+            // A file that exists but is 0 bytes cannot be a valid ELF
+            // shared object; treat it the same as missing so a corrupted
+            // extraction gets retried rather than trusted.
+            boolean present = length > 0;
+            if (verbose) {
+                Log.i(TAG, "  " + lib + ": " + (present ? length + " bytes" : "MISSING (length=" + length + ")"));
+            }
+            if (!present) {
+                ok = false;
             }
         }
-        return true;
+        return ok;
     }
 
     /** True when {@link #extract} needs to run before the game can start. */
@@ -176,6 +197,11 @@ public final class GameSetup {
             return false;
         }
 
+        Log.i(TAG, "Scanning " + apks.size() + " APK(s) for lib/" + ABI + "/*:");
+        for (String apk : apks) {
+            Log.i(TAG, "  " + apk);
+        }
+
         File libDir = extractedLibDir(context);
         if (!libDir.exists() && !libDir.mkdirs()) {
             Log.e(TAG, "Could not create " + libDir);
@@ -201,15 +227,8 @@ public final class GameSetup {
             }
         }
 
-        boolean ok = hasAllRequiredLibs(libDir);
-        if (!ok) {
-            for (String lib : REQUIRED_LIBS) {
-                if (!new File(libDir, lib).exists()) {
-                    Log.e(TAG, "Extraction finished but " + lib + " is still missing");
-                }
-            }
-        }
-        Log.i(TAG, "Extraction finished: " + extracted + " libraries, required set "
+        boolean ok = hasAllRequiredLibs(libDir, true);
+        Log.i(TAG, "Extraction finished: " + extracted + " files copied, required set "
             + (ok ? "complete" : "INCOMPLETE"));
         return ok;
     }
@@ -240,9 +259,12 @@ public final class GameSetup {
                     listener.onProgress("Extracting " + fileName);
                 }
 
+                long size = entry.getSize();
                 if (!copy(zip, out, buffer)) {
                     return count;
                 }
+                Log.i(TAG, "  found " + fileName + " (" + size + " bytes reported) in "
+                    + new File(apkPath).getName() + " -> wrote " + out.length() + " bytes");
                 count++;
             }
         } catch (IOException e) {
