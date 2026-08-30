@@ -5,12 +5,14 @@ namespace ui {
 class Ui : public ImGuiWrapper {
 public:
     Ui(ImVec2 display_size);
-    ~Ui() = default;
+    ~Ui() override = default;
 
     void render() override;
     void draw() override;
 
-    void on_touch(int type, bool multi, float x, float y);
+    // `action` is an Android MotionEvent action code, `finger` the pointer id
+    // assigned by SharedMultiTouchInput (0 on the single-touch path).
+    void on_touch(int action, int finger, float x, float y);
 
 private:
     bool m_clear_pos;

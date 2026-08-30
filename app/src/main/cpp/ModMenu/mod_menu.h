@@ -5,5 +5,6 @@ class Ui;
 }
 
 struct ModMenu {
-    ui::Ui* m_ui;
+    // Created lazily on the first frame, once the GL viewport is known.
+    ui::Ui* m_ui{ nullptr };
 };
