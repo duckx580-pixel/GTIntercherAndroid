@@ -1,6 +1,7 @@
 package com.rtsoft.growtopia;
 
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -201,5 +202,17 @@ public class Main extends SharedActivity {
     protected void onActivityResult(int i, int i2, Intent intent) throws Throwable {
         super.onActivityResult(i, i2, intent);
         this.googleSignInHelper.handleSignInResult(i, i2, intent);
+    }
+
+    // Not part of stock Growtopia: this app runs under com.gt.intercher, so the
+    // game's own assets are not ours to serve. SharedActivity.music_play and
+    // sound_load look them up through app.getAssets() on the activity, which
+    // would otherwise resolve to this package's (empty) assets. Forwarding to
+    // the Application hands the lookup to App.getAssets(), which redirects
+    // those callers to the installed Growtopia package. Without this, audio
+    // silently fails to load.
+    @Override
+    public AssetManager getAssets() {
+        return getApplicationContext().getAssets();
     }
 }

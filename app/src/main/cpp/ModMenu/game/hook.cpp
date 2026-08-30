@@ -24,7 +24,9 @@ namespace {
 void* resolve(const char* const* candidates, std::size_t count)
 {
     for (std::size_t i = 0; i < count; ++i) {
-        void* addr = DobbySymbolResolver(nullptr, candidates[i]);
+        // Naming the image costs nothing on the dlsym(RTLD_DEFAULT) path Dobby
+        // tries first, and lets its ELF-scanning fallback actually run.
+        void* addr = DobbySymbolResolver("libgrowtopia.so", candidates[i]);
         if (addr != nullptr) {
             LOGI("Resolved '%s' -> %p", candidates[i], addr);
             return addr;
