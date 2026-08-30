@@ -7,8 +7,7 @@ import androidx.annotation.Nullable;
 
 public class Main extends com.rtsoft.growtopia.Main {
     static final String[] NATIVE_LIBRARIES = {
-        "GrowtopiaFix",
-        "ModMenu"
+        "GrowtopiaFix"
     };
     private static final String TAG = "GTL.Main";
 
@@ -52,6 +51,12 @@ public class Main extends com.rtsoft.growtopia.Main {
         }
 
         super.onCreate(savedInstanceState);
+
+        // Plain Android-View overlay, added directly into this activity's own
+        // view hierarchy -- see ModMenuOverlay's own comment for why this
+        // replaced an earlier ImGui-drawn-inside-Growtopia's-own-render-hook
+        // menu that could freeze the whole game.
+        new ModMenuOverlay(this);
     }
 
 }
