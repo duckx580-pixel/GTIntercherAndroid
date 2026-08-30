@@ -346,7 +346,10 @@ class AppRenderer implements GLSurfaceView.Renderer {
                                                         Log.d(SharedActivity.PackageName, "requestPurchase>> Um, you'll need to change IAPEnabled to true in Main.java!");
                                                     } else {
                                                         this.app.iapManager.ConsumeItem(nativeGetLastOSMessageString());
-                                                        continue;
+                                                        // Duplicate "continue;" here was a JADX decompiler
+                                                        // artifact (case 39 below shows the same pattern with
+                                                        // only one); the second was unreachable and rejected
+                                                        // by javac.
                                                         continue;
                                                     }
                                                     break;
