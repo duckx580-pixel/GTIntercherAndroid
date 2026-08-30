@@ -1,12 +1,7 @@
 package com.gt.launcher;
 
 import android.app.ActivityManager;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 
@@ -57,24 +52,6 @@ public class Main extends com.rtsoft.growtopia.Main {
         }
 
         super.onCreate(savedInstanceState);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            makeToastUI("Overlay permission is required in order to show mod menu. " + "Restart the game after you allow permission");
-            startActivity(new Intent("android.settings.action.MANAGE_OVERLAY_PERMISSION",
-                Uri.parse("package:" + getPackageName())
-            ));
-            new Handler().postDelayed(this::finish, 5000);
-        } else {
-            new Handler().postDelayed(() -> {
-                startService(new Intent(Main.this, FloatingService.class));
-            }, 700);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stopService(new Intent(this, FloatingService.class));
     }
 
 }

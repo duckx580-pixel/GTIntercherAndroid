@@ -2,10 +2,7 @@ package com.gt.launcher;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
@@ -18,7 +15,6 @@ public class LauncherActivity extends AppCompatActivity {
 
     private LightningView lightningView;
     private boolean launching = false;
-    private static final int OVERLAY_REQ = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,18 +124,6 @@ public class LauncherActivity extends AppCompatActivity {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this,
-                "Overlay permission required for mod menu. Grant it and press Launch again.",
-                Toast.LENGTH_LONG).show();
-            startActivityForResult(
-                new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName())),
-                OVERLAY_REQ
-            );
-            return;
-        }
-
         launching = true;
         animateLaunch();
     }
@@ -176,17 +160,6 @@ public class LauncherActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == OVERLAY_REQ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                Toast.makeText(this, "Permission granted! Tap Launch.", Toast.LENGTH_SHORT).show();
-            }
-            launching = false;
-        }
     }
 
     @Override
