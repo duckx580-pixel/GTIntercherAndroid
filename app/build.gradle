@@ -45,6 +45,19 @@ android {
     // SDK install, so this doesn't add a network dependency.
     useLibrary 'org.apache.http.legacy'
 
+    // Growtopia's own native engine reads several of its bundled asset
+    // formats (items.dat, .rttex textures) via a raw file descriptor
+    // straight into the APK's zip (AAsset_openFileDescriptor), which only
+    // works for uncompressed (STORED) zip entries -- Android's AssetManager
+    // cannot hand out an mmap-able FD/offset into a DEFLATEd one. aapt2
+    // compresses any extension it doesn't already recognize as
+    // pre-compressed by default, which covers none of these, so they need
+    // to be listed explicitly or the engine's own asset reads fail even
+    // though the files are present in the APK.
+    aaptOptions {
+        noCompress 'dat', 'rttex', 'rml', 'rcss', 'ttf', 'prof', 'profm'
+    }
+
     defaultConfig {
         applicationId 'com.gt.intercher'
         minSdk 21

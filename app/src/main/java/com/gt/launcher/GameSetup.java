@@ -19,10 +19,13 @@ import android.os.Build;
  * app/src/main/jniLibs/arm64-v8a/ -- so none of that extraction machinery is
  * needed here any more.
  *
- * <p>Growtopia still needs to be installed for one reason: its game assets
- * (textures, sounds, game data). App.getAssets() redirects asset lookups to
- * the installed Growtopia package's own AssetManager rather than this app's
- * (which carries none of that content) -- see App.java.
+ * <p>Growtopia's own game assets (items.dat, UI textures, audio, ...) are
+ * likewise bundled directly in this app's own src/main/assets/ now, rather
+ * than reached via a runtime redirect into the installed Growtopia package's
+ * AssetManager -- that redirect only ever covered two specific Java-side
+ * audio-loading call sites and did nothing for the native engine's own asset
+ * reads, which go through Activity.getAssets() directly from C++. See the
+ * comment on the (now removed) getAssets() override in App.java.
  */
 public final class GameSetup {
     public static final String GROWTOPIA_PACKAGE = "com.rtsoft.growtopia";
