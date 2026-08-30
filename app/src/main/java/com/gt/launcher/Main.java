@@ -60,6 +60,13 @@ public class Main extends com.rtsoft.growtopia.Main {
                 // Never fatal on its own: the loads below report the real problem.
                 Log.e(TAG, "installNativeLibraryPath failed", e);
             }
+
+            // Must happen before super.onCreate(), which unconditionally does
+            // System.loadLibrary("growtopia") -- see GameSetup.preloadDependencies
+            // for why installNativeLibraryPath's directory injection alone was
+            // not enough for that call to resolve libgrowtopia.so's own
+            // dependencies, confirmed on a real device.
+            GameSetup.preloadDependencies(nativeLibraryDir);
         }
 
         try {

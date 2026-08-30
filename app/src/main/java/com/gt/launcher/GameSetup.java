@@ -159,6 +159,53 @@ public final class GameSetup {
         return ok;
     }
 
+    /**
+     * Explicitly loads libgrowtopia.so's non-system dependencies (everything
+     * in REQUIRED_LIBS except libgrowtopia.so itself), by full path, before
+     * anything calls System.loadLibrary("growtopia").
+     *
+     * This is necessary, not just extra caution: on a real device, this
+     * exact scenario was tested and failed even with the dependency files
+     * verified present (correct byte counts) in the same directory that
+     * NativeUtils.installNativeLibraryPath was given --
+     * "UnsatisfiedLinkError: dlopen failed: library libanzu.so not found",
+     * thrown from inside System.loadLibrary("growtopia") while it was
+     * resolving libgrowtopia.so's own DT_NEEDED entries.
+     *
+     * The Java-level reflection trick in NativeUtils patches the
+     * classloader's own native library directory list, which is enough for
+     * a direct System.loadLibrary(name) call to locate a file by name. It
+     * is not the same thing as the native linker's namespace search path
+     * used when a library that was just opened resolves ITS OWN dependency
+     * list -- on this device those clearly aren't the same list, since
+     * libgrowtopia.so itself was locatable (the error names its dependency,
+     * not libgrowtopia.so) but libanzu.so, sitting right next to it, was not
+     * found for that inner resolution.
+     *
+     * Loading each dependency explicitly by full path sidesteps the
+     * question of which search path is used for what, because it does not
+     * rely on either: once a library is loaded under its own soname
+     * (libanzu.so, libsqliteX.so, libc++_shared.so), the dynamic linker
+     * reuses that already-loaded instance for any later DT_NEEDED reference
+     * to the same soname from anywhere in the same process, rather than
+     * searching for it again.
+     */
+    public static void preloadDependencies(String nativeLibraryDir) {
+        // libc++_shared.so first: the other two are themselves C++ binaries
+        // and may need the runtime already resident.
+        String[] order = { "libc++_shared.so", "libsqliteX.so", "libanzu.so" };
+
+        for (String lib : order) {
+            File f = new File(nativeLibraryDir, lib);
+            try {
+                System.load(f.getAbsolutePath());
+                Log.i(TAG, "Preloaded " + lib);
+            } catch (UnsatisfiedLinkError e) {
+                Log.e(TAG, "Failed to preload " + lib + " from " + f, e);
+            }
+        }
+    }
+
     /** True when {@link #extract} needs to run before the game can start. */
     public static boolean needsExtraction(Context context) {
         return isGrowtopiaInstalled(context) && resolveNativeLibraryDir(context) == null;
