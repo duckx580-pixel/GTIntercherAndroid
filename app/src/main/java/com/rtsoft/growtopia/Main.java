@@ -93,6 +93,7 @@ public class Main extends SharedActivity {
             return;
         }
         System.loadLibrary(dllname);
+        com.gt.launcher.ModMenuBridge.onGrowtopiaLibraryLoaded();
         super.onCreate(bundle);
         JavaInterface.injectActivityJava(this);
         this.heightProvider = new HeightProvider(this).setHeightListener(new HeightProvider.HeightListener() {

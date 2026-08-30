@@ -1,6 +1,4 @@
-#include <chrono>
 #include <string>
-#include <thread>
 #include <dlfcn.h>
 #include <jni.h>
 #include <KittyMemory.h>
@@ -17,21 +15,21 @@ jmethodID g_load_class_method{ nullptr };
 
 // System.loadLibrary("ModMenu") triggers this automatically; it is the
 // standard, documented way a native library obtains a JavaVM* for later use.
-// game::hook::init() needs one to call RegisterNatives from the background
-// polling thread below, which is a plain std::thread with no JNIEnv of its
-// own until it attaches.
 //
-// It also captures the app's own classloader, which that background thread
-// needs for a much less obvious reason: JNIEnv::FindClass, called from a
-// thread that was attached via AttachCurrentThread rather than one that
-// originated from Java, resolves against the boot classloader instead of
-// the app's own PathClassLoader -- a well-known Android JNI pitfall -- so it
+// It also captures the app's own classloader. This used to matter for a
+// background poller thread that no longer exists (see the comment above
+// Java_com_gt_launcher_ModMenuBridge_installHooks for why), but is kept as
+// a defensive fallback for find_app_class in case anything ever needs to
+// resolve an application class from a thread that isn't a proper
+// Java-originated one: JNIEnv::FindClass called from a thread attached via
+// AttachCurrentThread resolves against the boot classloader instead of the
+// app's own PathClassLoader -- a well-known Android JNI pitfall -- so it
 // fails to find application classes like com.rtsoft.growtopia.AppRenderer.
 // JNI_OnLoad itself runs synchronously on the thread that called
 // System.loadLibrary("ModMenu"), which *is* a proper Java-originated thread,
 // so FindClass here resolves correctly; the standard fix is to fetch that
 // class's ClassLoader object here and use its loadClass() method later
-// instead of calling FindClass directly from the attached thread.
+// instead of calling FindClass directly from an attached thread.
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* /*reserved*/)
 {
     g_jvm = vm;
@@ -98,46 +96,50 @@ jclass find_app_class(JNIEnv* env, const char* slash_name)
     return clazz;
 }
 
-__unused __attribute__((constructor))
-void constructor_main()
+// Called from com.rtsoft.growtopia.Main.onCreate(), immediately after
+// System.loadLibrary("growtopia") returns and before super.onCreate() (which
+// is what creates the AppGLSurfaceView and starts the GL render thread --
+// see SharedActivity.onCreate()).
+//
+// An earlier version of this hook installer ran on a background std::thread
+// that polled dlopen(RTLD_NOLOAD) until libgrowtopia.so appeared, then
+// attached itself to the JVM and installed the hooks from there. That thread
+// had no ordering relationship with Growtopia's own startup: it could end up
+// calling RegisterNatives (and, before that, resolving symbols) while
+// Growtopia's GL thread was already alive and actively executing translated
+// code, on an x86 emulator running everything through libhoudini.so. That is
+// suspected to be the cause of an intermittent SIGSEGV observed entirely
+// inside libhoudini.so on real test runs -- a race between our thread
+// touching the process while Houdini is concurrently translating/running
+// Growtopia's own code on another thread, not anything specific to how the
+// hook itself was installed (RegisterNatives already ruled out inline code
+// patching as the cause; see helper/hook.h).
+//
+// Calling this synchronously, on the same thread and at the one point where
+// growtopia.so is guaranteed loaded but nothing of Growtopia's has started
+// running yet, removes that race entirely: there is no other thread of
+// Growtopia's alive at all yet for this to run concurrently with. It also
+// means the JNIEnv handed to us here is already correct for this thread --
+// no AttachCurrentThread/DetachCurrentThread needed.
+extern "C" JNIEXPORT void JNICALL Java_com_gt_launcher_ModMenuBridge_installHooks(JNIEnv* env, jclass /*clazz*/)
 {
-    // Create a new thread because we don't want do while loop make main thread
-    // stuck.
-    auto thread = std::thread([]() {
-        // Wait until Growtopia native library loaded. Bounded, so a failed or
-        // aborted launch leaves a thread that exits rather than one spinning
-        // for the life of the process.
-        constexpr int kPollIntervalMs = 32;
-        constexpr int kTimeoutMs = 60000;
+    if (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr) {
+        LOGE("installHooks: libgrowtopia.so is not loaded; mod menu disabled");
+        return;
+    }
 
-        int waited = 0;
-        while (dlopen("libgrowtopia.so", RTLD_NOLOAD) == nullptr) {
-            if (waited >= kTimeoutMs) {
-                LOGE("libgrowtopia.so did not load within %d ms; giving up", kTimeoutMs);
-                return;
-            }
+    KittyMemory::ProcMap map = KittyMemory::getLibraryBaseMap("libgrowtopia.so");
+    if (!map.isValid()) {
+        LOGE("installHooks: failed to map libgrowtopia.so; mod menu disabled");
+        return;
+    }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds{ kPollIntervalMs });
-            waited += kPollIntervalMs;
-        }
+    LOGD("libgrowtopia.so start address: 0x%llX", map.startAddress);
 
-        KittyMemory::ProcMap map{};
-        map = KittyMemory::getLibraryBaseMap("libgrowtopia.so");
-        if (!map.isValid()) {
-            LOGE("Failed to load libgrowtopia.so");
-            return;
-        }
+    // Create a global pointer to hold the class that will be
+    // called inside the hook function.
+    g_mod_menu = new ModMenu{};
 
-        LOGD("libgrowtopia.so start address: 0x%llX", map.startAddress);
-
-        // Create a global pointer to hold the class that will be
-        // called inside the hook function.
-        g_mod_menu = new ModMenu{};
-
-        // Starting to hook Growtopia function.
-        game::hook::init();
-    });
-
-    // Don't forget to detach the thread from the main thread.
-    thread.detach();
+    // Starting to hook Growtopia function.
+    game::hook::init(env);
 }
