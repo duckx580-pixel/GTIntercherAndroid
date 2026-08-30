@@ -15,9 +15,9 @@ body.world_ui {
 }
 
 #left_panel {
-    display: none;
+    display: block;
     position: absolute;
-    top: 168dp;
+    top: 90dp;
     left: 8dp;
     transition: margin-left 0.2s linear-in;
     margin-left: 0dp;
@@ -39,7 +39,7 @@ body.world_ui {
 .petbattle-hide #top_panel,
 .hide #top_panel {
     transition: margin-top 0.2s linear-in;
-    margin-top: -250dp;
+    margin-top: -200dp;
 }
 
 /*-------------------------------------------------------------------------------*/
@@ -52,13 +52,13 @@ body.world_ui {
 }
 
 #gems_panel {
+    display: inline;
     width: 250dp;
-    height: 208dp;
-    background-color: #311d16;
-    border: 2dp #77614c;
-    border-radius: 12px;
+    height: 75dp;
+    border-radius: 7dp;
+    background-color: rgba(24, 107, 139, 170);
+    display: inline-block;
     vertical-align: top;
-    display: inline-block; 
 }
 
 .box_border {
@@ -66,10 +66,8 @@ body.world_ui {
     margin-left: 5dp;
     width: 65dp;
     height: 65dp;
-
-    background-color: #311d16;
-    border-radius: 12px;
-    border: 2dp #77614c;
+    border-radius: 7dp;
+    background-color: #186B8BCC;
     vertical-align: top;
     /* Remove any margins that might interfere with centering */
 }
@@ -105,15 +103,12 @@ body.world_ui {
 }
 
     #gems_panel .panel {
-        color: #e3cc9e;
         margin-left: 15dp;
-        width: 86%;
+        width: 70%;
         height: 34dp;
-        background-color: #311d16;
-        border-radius: 12px;
-        border: 2dp #77614c;
+        background-color: rgba(65,123,150,255);
         display: inline-block; 
-        vertical-align: left;
+        vertical-align: top;
         box-shadow: #000a 0px 2px 2px;
         border-top-left-radius: 6dp;
         border-top-right-radius: 6dp;
@@ -121,20 +116,6 @@ body.world_ui {
         border-bottom-right-radius: 6dp;
     }
 
-    #gems_panel .panel-full {
-        margin-top: 4dp;
-        width: 230dp;
-        height: 34dp;
-        transform: translateX(-52dp);
-        background-color: #311d16;
-        border: 2dp #77614c;
-        box-shadow: #000a 0px 2px 2px;
-        border-top-left-radius: 6dp;
-        border-top-right-radius: 6dp;
-        border-bottom-left-radius: 6dp;
-        border-bottom-right-radius: 6dp;
-        position: relative;
-    }
     
     #gems_panel .left_panel {
         height:100%; 
@@ -149,7 +130,7 @@ body.world_ui {
         width:75%; 
         display: inline-block;
         vertical-align: top;
-	    sound-on-click: true;
+	sound-on-click: true;
     }
 
     #gems_panel .panel_name {
@@ -166,13 +147,13 @@ body.world_ui {
     }
 
         #gems_panel .panel:active #gem_left_panel {
-            background-color: #cb8e54;
+            background-color: rgba(83, 133, 152, 255);
         }
 
     #gems_panel #gem_left_panel {
         width: 41dp;
         height: 100%;
-        background-color: #ea903c;
+        background-color: rgba(116,189,212,255);
         border-top-left-radius: 6dp;
         border-bottom-left-radius: 6dp;
         margin-left: -4dp;
@@ -199,36 +180,6 @@ body.world_ui {
         font-effect: shadow(2dp 2dp black);
         display: inline-block;
         vertical-align: top;
-    }
-
-    #gems_panel #bar-panel {
-        position: absolute;
-        top: 4dp;
-        left: 38dp;
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        height: 100%;
-        width: 100%;
-        max-width: 195dp;
-        z-index: 2;
-        display: inline-block;
-        vertical-align: top;
-        font-size: 82%;
-    }
-
-    #health-bar,
-    #hunger-bar,
-    #energy-bar {
-        position: absolute;
-        top: 0;
-        left: 38dp;
-        height: 100%;
-        width: 192dp;
-        z-index: 1;
-        border-top-right-radius: 6dp;
-        border-bottom-right-radius: 6dp;
-        transform-origin: left center;
     }
 
     #gems_panel #gem_plus_button_right {
@@ -320,74 +271,5 @@ body.world_ui {
     display: inline-block;
     vertical-align: top;
 }
-#panel_kanan {
-    position: absolute;
-    right: 14vh;
-    top: 10vh;
-}
 
-.card {
-    width: 350px;
-    padding: 23px 0px;
-
-    color: #e3cc9e;
-
-    background-color: #311d16;
-    border-radius: 12px;
-    border: 2dp #77614c;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-
-}
-
-.card-icon {
-    font-size: 18px;
-    margin-bottom: 12px;
-    color: #e3cc9e;
-}
-
-.card-title {
-    font-size: 24px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin: 0;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.card p {
-    font-size: 18px;
-}
-#health-bar {
-decorator: linear-gradient(to bottom,#FB0606 0%, #FF5900 50%, #FF2A00 53%);
-}
-#hunger-bar {
-decorator: linear-gradient(to top,#FF8800 0%, #FF5900 50%, #FB9D06 53%);
-}
-#energy-bar {
-decorator: linear-gradient(to top,#FFB300 0%, #FFF200 50%, #FBCA06 53%);
-}
-
-#drink_icon {
-    width: 28dp;
-    height: 28dp;
-    decorator: image(interface/large/drink.rttex);
-    margin: auto;
-}
-#heart_icon {
-    width: 28dp;
-    height: 28dp;
-    decorator: image(interface/large/heart.rttex);
-    margin: auto;
-}
-#meat_icon {
-    width: 28dp;
-    height: 28dp;
-    decorator: image(interface/large/meat.rttex);
-    margin: auto;
-}
 /*-------------------------------------------------------------------------------*/

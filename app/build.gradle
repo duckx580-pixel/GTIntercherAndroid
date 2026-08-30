@@ -55,7 +55,7 @@ android {
     // to be listed explicitly or the engine's own asset reads fail even
     // though the files are present in the APK.
     aaptOptions {
-        noCompress 'dat', 'rttex', 'rml', 'rcss', 'ttf', 'prof', 'profm'
+        noCompress 'dat', 'rttex', 'rtfont', 'rml', 'rcss', 'ttf', 'fnt', 'db'
     }
 
     defaultConfig {
