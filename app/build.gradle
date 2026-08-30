@@ -37,6 +37,14 @@ android {
         aidl true
     }
 
+    // Since API 28, org.apache.http.* was removed from the default compile
+    // classpath entirely. ServerManagedPolicy.java and APKExpansionPolicy.java
+    // (Google's old license-check helpers) import org.apache.http.NameValuePair
+    // and org.apache.http.client.utils.URLEncodedUtils directly, which only
+    // exist in this optional platform library -- it ships with every Android
+    // SDK install, so this doesn't add a network dependency.
+    useLibrary 'org.apache.http.legacy'
+
     defaultConfig {
         applicationId 'com.gt.intercher'
         minSdk 21

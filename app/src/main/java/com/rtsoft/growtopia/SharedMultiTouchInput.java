@@ -76,58 +76,49 @@ public class SharedMultiTouchInput {
         AppGLSurfaceView.nativeOnTouch(i, f, f2, iGetFingerByPointerID);
     }
 
-    /* JADX WARN: Removed duplicated region for block: B:19:0x003c  */
-    /* JADX WARN: Removed duplicated region for block: B:20:0x004c  */
-    /*
-        Code decompiled incorrectly, please refer to instructions dump.
-        To view partially-correct code enable 'Show inconsistent code' option in preferences
-    */
-    public static boolean OnInput(android.view.MotionEvent r6) {
-        /*
-            int r0 = r6.getActionIndex()
-            int r1 = r6.getActionMasked()
-            r2 = 0
-            r3 = 1
-            if (r1 == 0) goto L4c
-            if (r1 == r3) goto L3c
-            r4 = 2
-            if (r1 == r4) goto L21
-            r4 = 3
-            if (r1 == r4) goto L1b
-            r4 = 5
-            if (r1 == r4) goto L4c
-            r2 = 6
-            if (r1 == r2) goto L3c
-            goto L5b
-        L1b:
-            java.util.LinkedList<com.rtsoft.growtopia.SharedMultiTouchInput$TouchInfo> r6 = com.rtsoft.growtopia.SharedMultiTouchInput.listTouches
-            r6.clear()
-            goto L5b
-        L21:
-            r6.getPointerCount()
-        L24:
-            int r0 = r6.getPointerCount()
-            if (r2 >= r0) goto L5b
-            float r0 = r6.getX(r2)
-            float r1 = r6.getY(r2)
-            int r5 = r6.getPointerId(r2)
-            processMouse(r4, r0, r1, r5)
-            int r2 = r2 + 1
-            goto L24
-        L3c:
-            float r1 = r6.getX(r0)
-            float r2 = r6.getY(r0)
-            int r6 = r6.getPointerId(r0)
-            processMouse(r3, r1, r2, r6)
-            goto L5b
-        L4c:
-            float r1 = r6.getX(r0)
-            float r4 = r6.getY(r0)
-            int r6 = r6.getPointerId(r0)
-            processMouse(r2, r1, r4, r6)
-        L5b:
-            return r3
-        */
-        throw new UnsupportedOperationException("Method not decompiled: com.rtsoft.growtopia.SharedMultiTouchInput.OnInput(android.view.MotionEvent):boolean");
+    // JADX could not decompile this method and left it as a smali dump plus
+    // a throw UnsupportedOperationException stub (see git history). That
+    // compiles, but crashes the game the moment any multi-touch gesture
+    // reaches it -- WrapSharedMultiTouchInput.OnInput calls straight into
+    // this. The dumped smali is fully legible register-transfer code
+    // though, so reconstructed it directly rather than leaving the stub:
+    // ACTION_DOWN/POINTER_DOWN and ACTION_UP/POINTER_UP both resolve to the
+    // pointer at getActionIndex(); ACTION_MOVE reports every pointer's
+    // current position; ACTION_CANCEL drops all tracked touches. The action
+    // codes passed to processMouse (0/1/2) match what
+    // AppGLSurfaceView.nativeOnTouch expects for down/up/move.
+    public static boolean OnInput(android.view.MotionEvent motionEvent) {
+        int actionIndex = motionEvent.getActionIndex();
+        switch (motionEvent.getActionMasked()) {
+            case android.view.MotionEvent.ACTION_DOWN:
+            case android.view.MotionEvent.ACTION_POINTER_DOWN:
+                processMouse(0,
+                    motionEvent.getX(actionIndex),
+                    motionEvent.getY(actionIndex),
+                    motionEvent.getPointerId(actionIndex));
+                break;
+            case android.view.MotionEvent.ACTION_UP:
+            case android.view.MotionEvent.ACTION_POINTER_UP:
+                processMouse(1,
+                    motionEvent.getX(actionIndex),
+                    motionEvent.getY(actionIndex),
+                    motionEvent.getPointerId(actionIndex));
+                break;
+            case android.view.MotionEvent.ACTION_MOVE:
+                int pointerCount = motionEvent.getPointerCount();
+                for (int i = 0; i < pointerCount; i++) {
+                    processMouse(2,
+                        motionEvent.getX(i),
+                        motionEvent.getY(i),
+                        motionEvent.getPointerId(i));
+                }
+                break;
+            case android.view.MotionEvent.ACTION_CANCEL:
+                listTouches.clear();
+                break;
+            default:
+                break;
+        }
+        return true;
     }
 }

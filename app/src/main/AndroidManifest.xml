@@ -75,5 +75,13 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        <!-- Pairs with useLibrary 'org.apache.http.legacy' in app/build.gradle:
+             compiling against it isn't enough, devices on API 28+ need this
+             declared to actually load the library at runtime. required=false
+             so install isn't blocked on a device without it. -->
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
     </application>
 </manifest>
