@@ -4,7 +4,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.3.2'
+        // AGP 8.3.2's native-build code (NativeModelBuilder) calls
+        // Project.exec(Action), a Gradle API that was reworked starting in
+        // Gradle 8.5. Gradle 8.7 (needed here for Java 21 support) no longer
+        // has that exact overload, so CMake configuration fails immediately
+        // with NoSuchMethodError before CMake itself even runs. AGP 8.5.2 is
+        // built against the updated API and is the documented minimum AGP for
+        // Gradle 8.7, so bumping this instead of downgrading Gradle keeps
+        // Java 21 support intact.
+        classpath 'com.android.tools.build:gradle:8.5.2'
     }
 }
 
