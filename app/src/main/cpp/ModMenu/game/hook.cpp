@@ -67,7 +67,17 @@ bool query_display_size(ImVec2& out)
 // overlay on top of it.
 INSTALL_JNI_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
 {
+    // A render-thread freeze was observed with the thread stuck entirely
+    // inside libhoudini.so (MEmu's ARM-to-x86 translator), no Java frames,
+    // no symbols -- which could be Growtopia's own original render call
+    // below, or our own ImGui init/render code further down (see the
+    // logging there). This first-frame-only bracket tells the two apart:
+    // if "orig done" for frame 1 never shows up in the next freeze's log,
+    // the hang is in Growtopia's own code, not ours.
+    static bool first_frame = true;
+    if (first_frame) LOGI("AppRenderer__nativeRender: calling orig (frame 1)");
     orig_AppRenderer__nativeRender(env, clazz);
+    if (first_frame) LOGI("AppRenderer__nativeRender: orig done (frame 1)");
 
     ImVec2 display_size{};
     if (!query_display_size(display_size)) {
@@ -96,6 +106,7 @@ INSTALL_JNI_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
     g_mod_menu->m_ui->render();
 
     game::api::clear_frame_env();
+    first_frame = false;
 }
 
 // AppGLSurfaceView.nativeOnTouch(int action, float x, float y, int finger).

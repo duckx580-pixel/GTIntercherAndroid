@@ -1,6 +1,7 @@
 #include <chrono>
 
 #include "imgui_wrapper.h"
+#include "../utils/log.h"
 
 namespace {
 double now_seconds()
@@ -33,11 +34,21 @@ void ImGuiWrapper::set_display_size(ImVec2 display_size)
 
 bool ImGuiWrapper::init()
 {
-    // Setup Dear Gui context
+    // This whole function runs on the GL thread, on its very first frame.
+    // A freeze observed on real test runs shows that thread permanently
+    // stuck deep inside libhoudini.so (MEmu's ARM-to-x86 translator) with no
+    // Java frames and no resolvable symbols at all -- i.e. Houdini itself
+    // hung translating/running something in here, or in render() below, and
+    // never returned. There is no way to see past that boundary from an ANR
+    // trace or a debugger, so these LOGI calls exist purely to bracket every
+    // step: whichever "... done" line is missing on the next freeze is the
+    // one Houdini choked on.
+    LOGI("ImGuiWrapper::init: ImGui::CreateContext");
     IMGUI_CHECKVERSION();
     if (!ImGui::CreateContext()) {
         return false;
     }
+    LOGI("ImGuiWrapper::init: ImGui::CreateContext done");
 
     ImGuiIO &io = ImGui::GetIO();
 
@@ -48,18 +59,23 @@ bool ImGuiWrapper::init()
     io.IniFilename = nullptr;
 
     // Setup Renderer backends
+    LOGI("ImGuiWrapper::init: ImGui_ImplOpenGL3_Init");
     if (!ImGui_ImplOpenGL3_Init()) {
         ImGui::DestroyContext();
         return false;
     }
+    LOGI("ImGuiWrapper::init: ImGui_ImplOpenGL3_Init done");
 
     // Setup Font
+    LOGI("ImGuiWrapper::init: AddFontDefault");
     ImFontConfig font_cfg;
     font_cfg.SizePixels = 14.0f * (m_display_scale.x + m_display_scale.y);
     io.Fonts->AddFontDefault(&font_cfg);
+    LOGI("ImGuiWrapper::init: AddFontDefault done");
 
     // Scale All Widgets Size
     ImGui::GetStyle().ScaleAllSizes(m_display_scale.x + m_display_scale.y);
+    LOGI("ImGuiWrapper::init: complete");
     return true;
 }
 
@@ -79,8 +95,19 @@ void ImGuiWrapper::render() {
     }
     m_last_frame_time = now;
 
-    // Start the Dear Gui frame
+    // Start the Dear Gui frame.
+    //
+    // ImGui_ImplOpenGL3_NewFrame() lazily creates the backend's GL device
+    // objects (shader program, font texture) on its first call, which was
+    // one of the two most likely places for the render-thread freeze
+    // described above -- see the comment in ImGuiWrapper::init(). Logging
+    // is kept here (not just in init()) because that first call happens
+    // from inside this function, not from init() itself.
+    static bool first_frame = true;
+    if (first_frame) LOGI("ImGuiWrapper::render: first ImGui_ImplOpenGL3_NewFrame (creates GL device objects)");
     ImGui_ImplOpenGL3_NewFrame();
+    if (first_frame) LOGI("ImGuiWrapper::render: first ImGui_ImplOpenGL3_NewFrame done");
+
     ImGui::NewFrame();
 
     draw();
@@ -88,6 +115,11 @@ void ImGuiWrapper::render() {
     // Rendering
     ImGui::EndFrame();
     ImGui::Render();
+    if (first_frame) LOGI("ImGuiWrapper::render: first ImGui_ImplOpenGL3_RenderDrawData");
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (first_frame) {
+        LOGI("ImGuiWrapper::render: first ImGui_ImplOpenGL3_RenderDrawData done");
+        first_frame = false;
+    }
 }
 } // ui
