@@ -211,9 +211,18 @@ public class Main extends SharedActivity {
     }
 
     @Override
-    protected void onActivityResult(int i, int i2, Intent intent) throws Throwable {
+    protected void onActivityResult(int i, int i2, Intent intent) {
         super.onActivityResult(i, i2, intent);
-        this.googleSignInHelper.handleSignInResult(i, i2, intent);
+        // GoogleSignInHelper.handleSignInResult declares "throws Throwable",
+        // decompiled from bytecode where that constraint doesn't apply. In
+        // real Java source, an override cannot declare a broader throws
+        // clause than the method it overrides (Activity.onActivityResult
+        // declares none), so it has to be caught here instead.
+        try {
+            this.googleSignInHelper.handleSignInResult(i, i2, intent);
+        } catch (Throwable t) {
+            Log.e("GTL.Main", "Google sign-in result handling failed", t);
+        }
     }
 
     // Not part of stock Growtopia: this app runs under com.gt.intercher, so the

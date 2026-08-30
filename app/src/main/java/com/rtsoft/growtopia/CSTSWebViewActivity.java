@@ -6,7 +6,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.FrameLayout;
-import com.json.nb;
 import com.rtsoft.growtopia.CSTSWebViewClient;
 import java.net.URLEncoder;
 
@@ -67,7 +66,9 @@ public class CSTSWebViewActivity extends Activity implements CSTSWebViewClient.C
 
     public String urlencode(String str) {
         try {
-            return URLEncoder.encode(str, nb.N);
+            // nb.N was IronSource SDK's own "utf-8" constant; inlined to drop
+            // the dependency on IronSource's obfuscated com.json package.
+            return URLEncoder.encode(str, "utf-8");
         } catch (Exception e) {
             Log.e("cstslog", "CSTS_urlencode" + e.getMessage() + e.getStackTrace());
             return str;

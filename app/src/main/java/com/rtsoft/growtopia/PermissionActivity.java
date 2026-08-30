@@ -107,7 +107,10 @@ public class PermissionActivity extends Activity {
     }
 
     private void permissionPopup(String str, String str2, boolean z, final boolean z2) {
-        AlertDialog alertDialogCreate = new AlertDialog.Builder(this, android.R.style.Theme.Material.Dialog.Alert).create();
+        // android.R.style constants are flat (underscore-joined), not nested
+        // classes; the dotted chain here was a JADX decompiler artifact that
+        // never actually compiled as Java source.
+        AlertDialog alertDialogCreate = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert).create();
         if (z) {
             str2 = str2 + " You can enable missing permissions in the permission section of the application settings.";
         }

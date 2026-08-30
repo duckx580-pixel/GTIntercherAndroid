@@ -29,6 +29,14 @@ android {
     compileSdk 34
     namespace "com.gt.launcher"
 
+    // AGP 7.0+ disabled AIDL compilation by default. The project genuinely
+    // ships .aidl files (com/android/vending/licensing/*.aidl) that
+    // LicenseChecker.java needs the generated ILicenseResultListener and
+    // ILicensingService interfaces from, so it has to be turned back on.
+    buildFeatures {
+        aidl true
+    }
+
     defaultConfig {
         applicationId 'com.gt.intercher'
         minSdk 21

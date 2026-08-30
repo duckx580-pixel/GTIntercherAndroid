@@ -10,7 +10,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import com.json.v8;
 
 /* JADX INFO: compiled from: CSTSWebViewActivity.java */
 /* JADX INFO: loaded from: classes2.dex */
@@ -53,7 +52,10 @@ class CSTSWebViewClient extends WebViewClient {
 
     @Override // android.webkit.WebViewClient
     public boolean shouldOverrideUrlLoading(WebView webView, String str) {
-        Log.v("cstslog", "shouldOverrideUrlLoading [" + str + v8.i.e);
+        // v8.i.e was IronSource SDK's own log-bracket constant ("]"); inlined
+        // to drop the dependency on IronSource's 14MB obfuscated com.json
+        // package for a single debug log character.
+        Log.v("cstslog", "shouldOverrideUrlLoading [" + str + "]");
         if (str.equals("exit://")) {
             CSTSWebViewClientCallback cSTSWebViewClientCallback = this._callback;
             if (cSTSWebViewClientCallback != null) {
