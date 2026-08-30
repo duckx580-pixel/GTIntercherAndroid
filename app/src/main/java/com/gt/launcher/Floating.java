@@ -26,7 +26,6 @@ public class Floating {
     private final Context mContext;
     private final CustomTouchView frameLayout;
     private final View floatingWindow;
-    private final RelativeLayout mFloatingWindowContent;
     private WindowManager mWindowManager;
 
     class CustomTouchView extends FrameLayout implements View.OnTouchListener {
@@ -104,9 +103,6 @@ public class Floating {
         frameLayout.addView(floatingWindow);
         frameLayout.addView(imageView);
 
-        // Floating window content.
-        mFloatingWindowContent = floatingWindow.findViewById(R.id.floating_widget_content);
-
         // Move floating window while drag at title bar.
         RelativeLayout floatingWidgetTitleBar = floatingWindow.findViewById(R.id.floating_widget_title_bar);
         floatingWidgetTitleBar.setOnTouchListener(new View.OnTouchListener() {
@@ -150,16 +146,28 @@ public class Floating {
     }
 
     public void setVisibility(boolean visibility) {
+        // This used to move Growtopia's live AppGLSurfaceView (mGLView) into
+        // and out of mFloatingWindowContent via removeView()/addView(), to
+        // shrink the running game into this draggable bubble. That is a
+        // known Android deadlock risk: removing a GLSurfaceView from its
+        // parent synchronously calls GLSurfaceView.GLThread.surfaceDestroyed,
+        // which blocks the calling thread (here, the main/UI thread, since
+        // this runs from a click listener) in Object.wait() until the paired
+        // GL render thread checks in and acknowledges the surface loss. On
+        // this project's test emulator that wait never returned -- confirmed
+        // by an ANR trace showing the main thread stuck exactly there, with
+        // this method on the stack -- freezing the entire app permanently on
+        // a single tap of this toggle. Whether that is emulator GPU-driver
+        // slowness or something else, blocking the UI thread on it at all is
+        // inherently deadlock-prone, so the actual game view is deliberately
+        // left alone here now. This turns the floating window into a plain
+        // draggable bubble (title bar + close button) without also shrinking
+        // the game into it, trading that cosmetic feature for never being
+        // able to freeze the app this way.
         if (visibility) {
             // Show the floating window.
             updateWindowManagerParams(false, false, false);
             floatingWindow.setVisibility(View.VISIBLE);
-
-            // Content stuff.
-            SharedActivity.app.mViewGroup.removeView(SharedActivity.app.mGLView);
-            SharedActivity.app.mViewGroup.removeView(SharedActivity.m_editTextRoot);
-            mFloatingWindowContent.addView(SharedActivity.app.mGLView);
-            mFloatingWindowContent.addView(SharedActivity.m_editTextRoot);
 
             SharedActivity.app.inFloatingMode = true;
 
@@ -174,18 +182,8 @@ public class Floating {
             updateWindowManagerParams(true, false, false);
             floatingWindow.setVisibility(View.GONE);
 
-            // Content stuff.
-            mFloatingWindowContent.removeView(SharedActivity.app.mGLView);
-            mFloatingWindowContent.removeView(SharedActivity.m_editTextRoot);
-            SharedActivity.app.mViewGroup.addView(SharedActivity.app.mGLView);
-            SharedActivity.app.mViewGroup.addView(SharedActivity.m_editTextRoot);
-
             SharedActivity.app.inFloatingMode = false;
         }
-
-        // Reload the surface.
-        SharedActivity.app.mGLView.onPause();
-        new android.os.Handler().postDelayed(() -> SharedActivity.app.mGLView.onResume(), 1000);
     }
 
     public void updateWindowManagerParams(boolean show, boolean canShowKeyboard, boolean z) {
