@@ -66,7 +66,22 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared'
+                // Static, not shared: GrowtopiaFix.so/ModMenu.so each embed
+                // their own copy of the C++ runtime instead of producing a
+                // separate libc++_shared.so. With a shared STL, CMake's own
+                // libc++_shared.so and Growtopia's own copy (bundled directly
+                // in src/main/jniLibs/arm64-v8a/, the same way RealGrowlauncher
+                // -- a real, working Growtopia launcher -- ships it) would
+                // both produce "lib/arm64-v8a/libc++_shared.so", which the
+                // native-lib merge step rejects outright ("2 files found with
+                // path..."). Static sidesteps that instead of relying on a
+                // pickFirst rule's merge-order to reliably choose Growtopia's
+                // copy over CMake's own. GrowtopiaFix.so and ModMenu.so don't
+                // share C++ objects across the shared-library boundary with
+                // each other or with Growtopia's own libraries (Dobby hooking
+                // is plain C function interception), so each having its own
+                // embedded runtime is safe.
+                arguments '-DANDROID_STL=c++_static'
             }
         }
     }

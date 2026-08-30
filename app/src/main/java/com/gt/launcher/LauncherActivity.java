@@ -5,18 +5,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,10 +19,6 @@ public class LauncherActivity extends AppCompatActivity {
     private LightningView lightningView;
     private boolean launching = false;
     private static final int OVERLAY_REQ = 1001;
-
-    private volatile boolean preparing = false;
-    private ViewGroup preparingOverlay;
-    private TextView preparingText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,14 +58,7 @@ public class LauncherActivity extends AppCompatActivity {
 
             Toast.makeText(this, "Guest mode: Launching without overlay...", Toast.LENGTH_SHORT).show();
             launching = true;
-
-            // Guest mode skips the overlay permission, not the game files: it
-            // still needs the native libraries unpacked before starting.
-            if (GameSetup.needsExtraction(this)) {
-                prepareGameFiles();
-            } else {
-                startGrowtopiaActivity();
-            }
+            startGrowtopiaActivity();
         });
 
         // Switch version
@@ -159,81 +141,7 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
         launching = true;
-
-        // Growtopia's libraries may still be packed inside its APK. Unpacking
-        // is real disk I/O, so it happens here, off the main thread and behind
-        // a progress overlay, rather than inside the game activity where it
-        // used to block startup and trigger an ANR.
-        if (GameSetup.needsExtraction(this)) {
-            prepareGameFiles();
-        } else {
-            animateLaunch();
-        }
-    }
-
-    private void prepareGameFiles() {
-        preparing = true;
-        showPreparing("Preparing game files...");
-
-        new Thread(() -> {
-            final boolean ok = GameSetup.extract(
-                getApplicationContext(),
-                message -> runOnUiThread(() -> updatePreparing(message))
-            );
-
-            runOnUiThread(() -> {
-                preparing = false;
-                if (isFinishing() || isDestroyed()) return;
-
-                hidePreparing();
-                if (ok) {
-                    animateLaunch();
-                } else {
-                    launching = false;
-                    Toast.makeText(this,
-                        "Could not read Growtopia's game files. Try Launch again.",
-                        Toast.LENGTH_LONG).show();
-                }
-            });
-        }, "gtl-extract").start();
-    }
-
-    private void showPreparing(String message) {
-        if (preparingOverlay == null) {
-            LinearLayout box = new LinearLayout(this);
-            box.setOrientation(LinearLayout.VERTICAL);
-            box.setGravity(Gravity.CENTER);
-            box.setBackgroundColor(0xE6000000);
-            box.setClickable(true); // swallow taps while we work
-
-            ProgressBar spinner = new ProgressBar(this);
-            box.addView(spinner);
-
-            preparingText = new TextView(this);
-            preparingText.setTextColor(0xFFFFFFFF);
-            preparingText.setGravity(Gravity.CENTER);
-            preparingText.setPadding(48, 32, 48, 0);
-            box.addView(preparingText);
-
-            preparingOverlay = box;
-            addContentView(preparingOverlay, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        }
-
-        preparingOverlay.setVisibility(View.VISIBLE);
-        updatePreparing(message);
-    }
-
-    private void updatePreparing(String message) {
-        if (preparingText != null) {
-            preparingText.setText(message);
-        }
-    }
-
-    private void hidePreparing() {
-        if (preparingOverlay != null) {
-            preparingOverlay.setVisibility(View.GONE);
-        }
+        animateLaunch();
     }
 
     private void animateLaunch() {
@@ -284,12 +192,7 @@ public class LauncherActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Leave the flag alone while extraction is still running in the
-        // background, or coming back to the launcher would let a second
-        // extraction start on top of the first.
-        if (!preparing) {
-            launching = false;
-        }
+        launching = false;
         View root = getWindow().getDecorView();
         if (root.getAlpha() < 1f) {
             root.animate().alpha(1f).setDuration(300).start();

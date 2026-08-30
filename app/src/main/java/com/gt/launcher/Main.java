@@ -7,17 +7,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.gt.launcher.utils.NativeUtils;
-
-import java.io.File;
-
 public class Main extends com.rtsoft.growtopia.Main {
     static final String[] NATIVE_LIBRARIES = {
-        "anzu", // We need anzu because we are using NativeUtils.installNativeLibraryPath
         "GrowtopiaFix",
         "ModMenu"
     };
@@ -31,44 +25,29 @@ public class Main extends com.rtsoft.growtopia.Main {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-        // The libraries are located (and if necessary extracted) by
-        // LauncherActivity on a background thread before it starts us. Doing it
-        // here would block the main thread on a multi-hundred-megabyte unzip,
-        // which is what used to freeze the app on launch.
+        // libgrowtopia.so and its own dependencies (libanzu.so, libsqliteX.so,
+        // libc++_shared.so) are bundled directly in this app's own
+        // src/main/jniLibs/arm64-v8a/, exactly like any normal native library
+        // this app ships -- matching how RealGrowlauncher (a real, working
+        // Growtopia launcher) does it, which was compared directly against
+        // this project to resolve a native-loading crash that a
+        // reflection/extraction-based approach could not get past reliably.
         //
-        // This must not bail out by returning early: onCreate has to reach
-        // super.onCreate or the framework raises SuperNotCalledException, and
-        // super.onCreate (com.rtsoft.growtopia.Main) unconditionally calls
-        // System.loadLibrary("growtopia") with no guard of its own. That means
-        // there is no recovering here once we've been started: if the native
-        // libraries are not genuinely ready, super.onCreate crashes regardless
-        // of what this method does. A previous version of this method "fell
-        // back" to ApplicationInfo.nativeLibraryDir directly when resolution
-        // failed, on the theory that something was better than nothing --
-        // that was wrong. resolveNativeLibraryDir already checks that exact
-        // directory first; falling back to it again after it was rejected
-        // guarantees the same missing-library crash through a different path.
-        // LauncherActivity is the only real gate: it must not start this
-        // activity unless resolveNativeLibraryDir() is already non-null.
-        String nativeLibraryDir = GameSetup.resolveNativeLibraryDir(this);
-        Log.i(TAG, "resolveNativeLibraryDir() = " + nativeLibraryDir);
-
-        if (nativeLibraryDir != null) {
-            try {
-                NativeUtils.installNativeLibraryPath(getClassLoader(), new File(nativeLibraryDir));
-            } catch (Throwable e) {
-                // Never fatal on its own: the loads below report the real problem.
-                Log.e(TAG, "installNativeLibraryPath failed", e);
-            }
-
-            // Must happen before super.onCreate(), which unconditionally does
-            // System.loadLibrary("growtopia") -- see GameSetup.preloadDependencies
-            // for why installNativeLibraryPath's directory injection alone was
-            // not enough for that call to resolve libgrowtopia.so's own
-            // dependencies, confirmed on a real device.
-            GameSetup.preloadDependencies(nativeLibraryDir);
-        }
-
+        // Deliberately NOT calling System.loadLibrary("anzu")/("sqliteX") (or
+        // System.load on their paths) here or anywhere: doing so previously
+        // caused a *different* crash. JNI_OnLoad is invoked by the JVM only in
+        // response to an explicit System.load/loadLibrary call for that exact
+        // library -- not automatically for a library the native dynamic
+        // linker resolves silently as another library's transitive
+        // dependency. Explicitly loading libsqliteX.so by name triggered its
+        // JNI_OnLoad, which eagerly resolves a Java support class
+        // (org.sqlite.database.sqlite.SQLiteCustomFunction) that Growtopia's
+        // own app ships but this one does not; missing it took the whole
+        // process down. Leaving these libraries unbundled-by-name and only
+        // present in the standard search path lets System.loadLibrary
+        // ("growtopia") below resolve them silently via the ordinary
+        // dynamic linker, the same way RealGrowlauncher's does, without ever
+        // triggering their own JNI_OnLoad.
         try {
             for (String nativeLibrary : NATIVE_LIBRARIES) {
                 System.loadLibrary(nativeLibrary);
