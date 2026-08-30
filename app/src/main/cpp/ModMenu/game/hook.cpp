@@ -12,6 +12,7 @@
 #include "game_api.h"
 
 extern ModMenu* g_mod_menu;
+extern JavaVM* g_jvm;
 
 namespace {
 // Growtopia 5.55 ships a fully stripped libgrowtopia.so: the internal C++
@@ -65,7 +66,7 @@ bool query_display_size(ImVec2& out)
 // AppRenderer.nativeRender() is invoked once per frame from onDrawFrame, on the
 // GL thread with the context current. Draw the game first, then stack the
 // overlay on top of it.
-INSTALL_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
+INSTALL_JNI_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
 {
     orig_AppRenderer__nativeRender(env, clazz);
 
@@ -103,7 +104,7 @@ INSTALL_HOOK(AppRenderer__nativeRender, void, JNIEnv* env, jclass clazz)
 // multi-touch path (SharedMultiTouchInput.processMouse) funnel through here, so
 // this one hook sees every touch. `action` is an Android MotionEvent action,
 // with ACTION_POINTER_DOWN/UP already normalized to ACTION_DOWN/UP.
-INSTALL_HOOK(AppGLSurfaceView__nativeOnTouch, void,
+INSTALL_JNI_HOOK(AppGLSurfaceView__nativeOnTouch, void,
     JNIEnv* env, jclass clazz, jint action, jfloat x, jfloat y, jint finger)
 {
     if (g_mod_menu->m_ui != nullptr) {
@@ -151,15 +152,44 @@ void init()
         LOGE("Could not resolve a touch function; mod menu will not accept input");
     }
 
-    install_hook_AppRenderer__nativeRender(render_addr);
+    // RegisterNatives needs a JNIEnv for this thread. This runs on the
+    // background poller thread from main.cpp, a plain std::thread with no
+    // JNIEnv of its own, so attach it to the JVM captured in JNI_OnLoad.
+    if (g_jvm == nullptr) {
+        LOGE("No JavaVM captured (JNI_OnLoad did not run?); mod menu disabled");
+        return;
+    }
+
+    JNIEnv* env = nullptr;
+    if (g_jvm->AttachCurrentThread(&env, nullptr) != JNI_OK || env == nullptr) {
+        LOGE("AttachCurrentThread failed; mod menu disabled");
+        return;
+    }
+
+    bool render_hooked = install_hook_AppRenderer__nativeRender(
+        env, "com/rtsoft/growtopia/AppRenderer", "nativeRender", "()V", render_addr);
+
+    if (!render_hooked) {
+        g_jvm->DetachCurrentThread();
+        LOGE("Failed to install render hook; mod menu disabled");
+        return;
+    }
 
     if (touch_addr != nullptr) {
-        install_hook_AppGLSurfaceView__nativeOnTouch(touch_addr);
+        bool touch_hooked = install_hook_AppGLSurfaceView__nativeOnTouch(
+            env, "com/rtsoft/growtopia/AppGLSurfaceView", "nativeOnTouch", "(IFFI)V", touch_addr);
 
-        // Hand the menu Dobby's trampoline to the unhooked original so injected
-        // taps reach the game directly instead of re-entering our own hook.
-        game::api::set_touch_passthrough(orig_AppGLSurfaceView__nativeOnTouch);
+        if (touch_hooked) {
+            // Hand the menu the captured original so injected taps reach the
+            // game directly instead of re-entering our own hook.
+            game::api::set_touch_passthrough(orig_AppGLSurfaceView__nativeOnTouch);
+        }
     }
+
+    // This thread only needed the JNIEnv to install the hooks above; the
+    // hooks themselves receive their own JNIEnv on whatever thread ART
+    // calls them from later.
+    g_jvm->DetachCurrentThread();
 
     // Resolve the JNI entry points the menu calls into for its features.
     game::api::init();
